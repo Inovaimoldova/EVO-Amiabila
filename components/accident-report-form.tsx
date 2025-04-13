@@ -155,7 +155,7 @@ export default function AccidentReportForm() {
 
   const { status, startSession, endSession, isSpeaking } = useConversation({
   })
-  const agentId = "dBAEMiC0EVY9tu6ngt51"
+  const agentId = "Sc6bGdDh6YWYnQFcBReW"
 
   const requestMicPermission = async () => {
     try {
@@ -309,7 +309,7 @@ export default function AccidentReportForm() {
 
   return (
     <FormProvider {...methods}>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden bg-[url('/evo-pattern.png')] bg-no-repeat bg-right-top mb-20">
+      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-20">
         <div className="p-3 sm:p-4 border-b border-gray-200">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">{STEPS[currentStep]}</h2>

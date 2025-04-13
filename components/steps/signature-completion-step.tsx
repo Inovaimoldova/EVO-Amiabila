@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Download, Loader2, Mail, Shield, CheckCheck, UploadCloud } from "lucide-react"
+import { CheckCircle2, Download, Loader2, Mail, CheckCheck, UploadCloud } from "lucide-react"
 import { useFormContext } from "react-hook-form"
 import type { AccidentFormData } from "@/lib/types"
 import { useState, useEffect } from "react"
@@ -178,16 +178,16 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
             )}
 
             {!signatureA && !isSigningA && (
-              <div className="flex justify-center mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
+              <div className="flex flex-col items-center justify-center mt-2 space-y-1">
+                <span className="text-sm font-medium text-gray-700">Semnează Digital (EVO Sign)</span>
+                <button
+                  type="button"
                   onClick={handleSignA}
-                  className="flex items-center gap-1 text-gray-700 border-gray-300"
+                  className="border border-gray-300 rounded-md p-1 hover:border-blue-sky-500 focus:outline-none focus:ring-2 focus:ring-blue-sky-500 focus:ring-offset-2 transition-all"
+                  aria-label="Semnează Digital pentru Șofer A"
                 >
-                  <Shield className="h-4 w-4" />
-                  <span>Semnează Digital (EVO Sign)</span>
-                </Button>
+                  <img src="/msign.png" alt="Sign Button" className="h-16 w-32 object-contain" />
+                </button>
               </div>
             )}
           </div>
@@ -224,17 +224,17 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
             )}
 
             {!signatureB && !isSigningB && (
-              <div className="flex justify-center mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSignB}
-                  className="flex items-center gap-1 text-gray-700 border-gray-300"
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Semnează Digital (EVO Sign)</span>
-                </Button>
-              </div>
+               <div className="flex flex-col items-center justify-center mt-2 space-y-1">
+                 <span className="text-sm font-medium text-gray-700">Semnează Digital (EVO Sign)</span>
+                 <button
+                   type="button"
+                   onClick={handleSignB}
+                   className="border border-gray-300 rounded-md p-1 hover:border-blue-sky-500 focus:outline-none focus:ring-2 focus:ring-blue-sky-500 focus:ring-offset-2 transition-all"
+                   aria-label="Semnează Digital pentru Șofer B"
+                 >
+                   <img src="/msign.png" alt="Sign Button" className="h-16 w-32 object-contain" />
+                 </button>
+               </div>
             )}
           </div>
         </Card>

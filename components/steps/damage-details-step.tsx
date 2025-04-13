@@ -1,10 +1,12 @@
 "use client"
 
-import type React from "react"
+import React, { useState } from "react"
 import { useFormContext, useWatch } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { AccidentFormData } from "@/lib/types"
+import { Upload, Loader } from "lucide-react"
+import Image from "next/image"
 
 // Define vehicle areas with their labels and SVG properties
 const vehicleAreas = [
@@ -33,6 +35,10 @@ const getAreaLabel = (areaId: string | null) => {
 
 export default function ImpactPointStep() {
   const { control, setValue, getValues } = useFormContext<AccidentFormData>()
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showSimulatedImage, setShowSimulatedImage] = useState(false);
+  const [simulatedDescription, setSimulatedDescription] = useState<string | null>(null);
+
   // Watch the specific field, let TS infer type, provide static default
   const impactPoints = useWatch({
     control,
@@ -58,6 +64,31 @@ export default function ImpactPointStep() {
     };
     setValue("impactPoints", newValue, { shouldDirty: true, shouldTouch: true });
   }
+
+  // --- Simulation Function ---
+  const handleSimulateUploadAndAnalysis = async () => {
+    setShowSimulatedImage(false);
+    setSimulatedDescription(null);
+    setIsAnalyzing(true);
+    console.log("Simulating upload of accident.png and AI analysis...");
+
+    // Simulate network delay and processing time
+    await new Promise(resolve => setTimeout(resolve, 2500)); 
+
+    // Simulate AI analysis results: preselect specific points
+    const simulatedPoints = {
+      vehicleA: "front-bumper",
+      vehicleB: "rear-right-fender"
+    };
+
+    setValue("impactPoints", simulatedPoints, { shouldDirty: true, shouldTouch: true });
+    console.log("Simulated analysis complete. Impact points set:", simulatedPoints);
+    
+    setSimulatedDescription("Analiza AI indică un impact frontal (Bară Față) pentru Vehiculul A și un impact în zona aripii dreapta spate pentru Vehiculul B.");
+    setShowSimulatedImage(true);
+    setIsAnalyzing(false);
+  };
+  // --- End Simulation Function ---
 
   // Reusable SVG Car Component
   const SvgCar = ({ selectedPoint, handleClick }: { selectedPoint: string | null, handleClick: (area: string) => void }) => (
@@ -221,8 +252,51 @@ export default function ImpactPointStep() {
       <h2 className="text-xl font-semibold">Punctul Inițial de Impact</h2>
 
       <p className="text-sm text-gray-500">
-        Indicați printr-o apăsare punctul inițial de impact pentru fiecare vehicul. Puteți apăsa din nou pentru a deselecta.
+        Indicați manual printr-o apăsare punctul inițial de impact pentru fiecare vehicul sau folosiți butonul de mai jos pentru a simula încărcarea unei imagini și analiza AI.
       </p>
+
+      {/* --- Simulation Button --- */}
+      <div className="my-4 text-center">
+        <Button 
+          onClick={handleSimulateUploadAndAnalysis} 
+          disabled={isAnalyzing}
+          className="inline-flex items-center gap-2"
+        >
+          {isAnalyzing ? (
+            <Loader className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          {isAnalyzing ? "Analizând Imaginea..." : "Simulare Încărcare accident.png & Analiză AI"}
+        </Button>
+      </div>
+      {/* --- End Simulation Button --- */}
+
+      {/* --- Simulated Image & Description Display --- */}
+      {showSimulatedImage && (
+        <div className="my-4 p-3 border border-dashed border-gray-300 rounded-md max-w-3xl mx-auto bg-white shadow-sm flex flex-col md:flex-row items-start gap-4">
+           {/* Image Container - Don't shrink on md+ */} 
+           <div className="w-full md:w-auto flex-shrink-0">
+             <p className="text-xs text-center text-gray-500 mb-1 md:mb-2">Imagine Simulată Analizată:</p>
+             <Image 
+               src="/accident.png" 
+               alt="Simulated Accident Photo"
+               width={250} 
+               height={180} 
+               className="rounded object-contain shadow-sm mx-auto md:mx-0" // Center on mobile, align left on md+
+             />
+           </div>
+           {/* Description Container - Grow on md+ */} 
+           {simulatedDescription && (
+            <div className="w-full flex-grow p-2 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm italic text-blue-800 text-center md:text-left">
+                <span className="font-semibold block md:inline mb-1 md:mb-0">Rezumat AI:</span> {simulatedDescription}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      {/* --- End Simulated Image & Description Display --- */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Use grid for better layout */}
         <Card>
