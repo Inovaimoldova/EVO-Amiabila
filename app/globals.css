@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    /* Gray variants */
+    --gray-50: 220 20% 98%;
+    --gray-100: 220 14% 96%;
+    --gray-200: 220 13% 91%;
+    --gray-300: 216 12% 84%;
+    --gray-400: 218 11% 65%;
+    --gray-500: 220 9% 46%;
+    --gray-600: 215 14% 34%;
+    --gray-700: 217 19% 27%;
+    --gray-800: 215 28% 17%;
+    --gray-900: 221 39% 11%;
+    --gray-950: 224 71% 4%;
+
+    /* Blue Sky variants */
+    --blue-sky-50: 204 100% 97%;
+    --blue-sky-100: 204 94% 94%;
+    --blue-sky-200: 201 94% 86%;
+    --blue-sky-300: 199 95% 74%;
+    --blue-sky-400: 198 93% 60%;
+    --blue-sky-500: 199 89% 48%;
+    --blue-sky-600: 200 98% 39%;
+    --blue-sky-700: 201 96% 32%;
+    --blue-sky-800: 201 80% 28%;
+    --blue-sky-900: 202 80% 24%;
+    --blue-sky-950: 204 80% 16%;
+
+    /* Status colors */
+    --green-50: 138 76% 97%;
+    --green-100: 141 84% 93%;
+    --green-200: 141 79% 85%;
+    --green-300: 142 77% 73%;
+    --green-400: 142 69% 58%;
+    --green-500: 142 71% 45%;
+    --green-600: 142 76% 36%;
+    --green-700: 142 72% 29%;
+    --green-800: 143 64% 24%;
+    --green-900: 144 61% 20%;
+    --green-950: 145 80% 10%;
+
+    --apricot-50: 24 100% 97%;
+    --apricot-100: 24 94% 94%;
+    --apricot-200: 25 100% 86%;
+    --apricot-300: 25 100% 77%;
+    --apricot-400: 24 95% 67%;
+    --apricot-500: 23 96% 56%;
+    --apricot-600: 20 85% 48%;
+    --apricot-700: 16 95% 40%;
+    --apricot-800: 14 83% 34%;
+    --apricot-900: 12 75% 28%;
+    --apricot-950: 8 100% 14%;
+
+    --red-50: 0 86% 97%;
+    --red-100: 0 93% 94%;
+    --red-200: 0 96% 89%;
+    --red-300: 0 94% 82%;
+    --red-400: 0 91% 71%;
+    --red-500: 0 84% 60%;
+    --red-600: 0 72% 51%;
+    --red-700: 0 74% 42%;
+    --red-800: 0 70% 35%;
+    --red-900: 0 63% 31%;
+    --red-950: 0 75% 15%;
+
+    /* Component variables */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 200 98% 39%; /* Blue Sky 600 */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Increase font size for mobile */
+@media (max-width: 640px) {
+  .text-xs {
+    font-size: 0.8125rem;
+  }
+
+  .text-sm {
+    font-size: 0.9375rem;
+  }
+
+  label,
+  .text-gray-600,
+  .text-gray-700 {
+    font-size: 0.9375rem;
+  }
+}
+
+/* Add more visual differentiation between fields */
+.space-y-4 > div,
+.space-y-6 > div,
+.grid > div {
+  padding-bottom: 0.75rem;
+}
+
+.border-gray-200 {
+  border-color: rgba(229, 231, 235, 0.8);
+}
+
+/* Add subtle alternating backgrounds for better visual separation */
+.grid > div:nth-child(odd) {
+  background-color: rgba(249, 250, 251, 0.5);
+}
+
+/* Add subtle hover effect on interactive elements */
+.cursor-pointer:hover {
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+/* JetBrains Mono font for code and technical elements */
+.font-mono,
+code,
+pre,
+.font-jetbrains {
+  font-family: "JetBrains Mono", monospace;
+}
