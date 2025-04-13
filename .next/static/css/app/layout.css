@@ -1909,6 +1909,18 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));
 }
+.bg-\[\#3379DB\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(51 121 219 / var(--tw-bg-opacity, 1));
+}
+.bg-\[\#338287\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(51 130 135 / var(--tw-bg-opacity, 1));
+}
+.bg-\[\#BB46D8\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(187 70 216 / var(--tw-bg-opacity, 1));
+}
 .bg-\[url\(\'\/evo-pattern\.png\'\)\] {
   background-image: url('/evo-pattern.png');
 }
@@ -2588,6 +2600,18 @@ pre,
 .hover\:bg-yellow-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(202 138 4 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-\[\#2962b3\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(41 98 179 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-\[\#2a6b70\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(42 107 112 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-\[\#a33cc0\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(163 60 192 / var(--tw-bg-opacity, 1));
 }
 .hover\:fill-blue-200:hover {
   fill: #bfdbfe;

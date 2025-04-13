@@ -342,34 +342,33 @@ export default function AccidentReportForm() {
         )}
       </div>
 
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+      {/* Floating Action Button */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center">
         {!micPermission ? (
-          <Button onClick={requestMicPermission} title="Request Microphone Permission" className="bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12">
-            <Mic className="h-6 w-6" />
-            <span className="sr-only">Request Mic Permission</span>
+          <Button onClick={requestMicPermission} title="Solicită permisiunea microfonului" className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+            <Mic className="h-5 w-5" />
+            <span className="text-sm font-medium">Permisiune</span>
+            <span className="sr-only">Solicită permisiunea microfonului</span>
           </Button>
         ) : status === 'disconnected' ? (
-          <Button onClick={startConversation} title="Start AI Assistant" className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12">
-            <Mic className="h-6 w-6" />
-            <span className="sr-only">Start AI Assistant</span>
+          <Button onClick={startConversation} title="Pornește Asistența Vocală" className="bg-[#338287] hover:bg-[#2a6b70] text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+            <Mic className="h-5 w-5" />
+            <span className="text-sm font-medium">Asistență Vocală</span>
+            <span className="sr-only">Pornește Asistența Vocală</span>
           </Button>
         ) : status === 'connecting' ? (
-          <Button disabled title="Connecting..." className="bg-gray-400 text-white p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12 cursor-not-allowed">
-            <Loader className="h-6 w-6 animate-spin" />
-            <span className="sr-only">Connecting...</span>
+          <Button disabled title="Conectare..." className="bg-gray-400 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 cursor-not-allowed">
+            <Loader className="h-5 w-5 animate-spin" />
+            <span className="text-sm font-medium">Conectare...</span>
+            <span className="sr-only">Conectare...</span>
           </Button>
         ) : (
-          <Button onClick={stopConversation} title={isSpeaking ? "Assistant Speaking... Click to Stop" : "Stop AI Assistant"} className={`p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12 ${isSpeaking ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-blue-sky-600 hover:bg-blue-sky-700'} text-white`}>
+          <Button onClick={stopConversation} title={isSpeaking ? "Asistentul Vorbește... Click Pentru Oprire" : "Oprește Asistența Vocală"} className={`px-4 py-2 rounded-full shadow-lg flex items-center gap-2 ${isSpeaking ? 'bg-[#BB46D8] hover:bg-[#a33cc0] animate-pulse' : 'bg-[#3379DB] hover:bg-[#2962b3]'} text-white`}>
             {isSpeaking ? (
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-              </span>
-            ) : (
-              <PhoneOff className="h-6 w-6" />
-            )}
-
-            <span className="sr-only">{isSpeaking ? "Assistant Speaking... Click to Stop" : "Stop AI Assistant"}</span>
+              <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
+            ) : ( <PhoneOff className="h-5 w-5" /> )}
+            <span className="text-sm font-medium">{isSpeaking ? 'Ascultă...' : 'Oprește'}</span>
+            <span className="sr-only">{isSpeaking ? "Asistentul Vorbește... Click Pentru Oprire" : "Oprește Asistența Vocală"}</span>
           </Button>
         )}
       </div>
