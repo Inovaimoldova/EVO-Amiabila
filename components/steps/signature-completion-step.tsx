@@ -95,23 +95,23 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-          <a href="/constatare-amiabila.pdf" download={`Constatare-${referenceNumber}.pdf`}>
+        <div className="flex flex-col gap-3 items-center mt-6 w-full max-w-xs mx-auto">
+          <a href="/constatare-amiabila.pdf" download={`Constatare-${referenceNumber}.pdf`} className="w-full">
             <Button
-              className="flex items-center gap-2 bg-blue-sky-600 hover:bg-blue-sky-700 text-white w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 bg-blue-sky-600 hover:bg-blue-sky-700 text-white w-full"
             >
               <Download className="h-4 w-4" />
               <span>Descarcă PDF</span>
             </Button>
           </a>
-          <Button variant="outline" className="flex items-center gap-2 text-gray-700 border-gray-300">
+          <Button variant="outline" className="flex items-center justify-center gap-2 text-gray-700 border-gray-300 w-full">
             <Mail className="h-4 w-4" />
             <span>Retrimite pe Email</span>
           </Button>
           <Button
             variant="secondary"
             onClick={handleSimulateSendToEvo}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2 w-full"
           >
             <UploadCloud className="h-4 w-4" />
             <span>Trimite la EVO (Simulare)</span>

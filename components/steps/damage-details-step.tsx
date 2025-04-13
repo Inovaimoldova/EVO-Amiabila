@@ -251,9 +251,6 @@ export default function ImpactPointStep() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Punctul Inițial de Impact</h2>
 
-      <p className="text-sm text-gray-500">
-        Indicați manual printr-o apăsare punctul inițial de impact pentru fiecare vehicul sau folosiți butonul de mai jos pentru a simula încărcarea unei imagini și analiza AI.
-      </p>
 
       {/* --- Simulation Button --- */}
       <div className="my-4 text-center">
@@ -274,23 +271,23 @@ export default function ImpactPointStep() {
 
       {/* --- Simulated Image & Description Display --- */}
       {showSimulatedImage && (
-        <div className="my-4 p-3 border border-dashed border-gray-300 rounded-md max-w-3xl mx-auto bg-white shadow-sm flex flex-col md:flex-row items-start gap-4">
-           {/* Image Container - Don't shrink on md+ */} 
-           <div className="w-full md:w-auto flex-shrink-0">
-             <p className="text-xs text-center text-gray-500 mb-1 md:mb-2">Imagine Simulată Analizată:</p>
-             <Image 
-               src="/accident.png" 
+        <div className="my-4 p-3 border border-dashed border-gray-300 rounded-md max-w-3xl mx-auto bg-white shadow-sm flex flex-col items-center gap-4">
+           {/* Image Container */}
+           <div className="w-full">
+             <p className="text-xs text-center text-gray-500 mb-1">Imagine Simulată Analizată:</p>
+             <Image
+               src="/accident.png"
                alt="Simulated Accident Photo"
-               width={250} 
-               height={180} 
-               className="rounded object-contain shadow-sm mx-auto md:mx-0" // Center on mobile, align left on md+
+               width={250}
+               height={180}
+               className="rounded object-contain shadow-sm mx-auto"
              />
            </div>
-           {/* Description Container - Grow on md+ */} 
+           {/* Description Container */}
            {simulatedDescription && (
-            <div className="w-full flex-grow p-2 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm italic text-blue-800 text-center md:text-left">
-                <span className="font-semibold block md:inline mb-1 md:mb-0">Rezumat AI:</span> {simulatedDescription}
+            <div className="w-full p-2 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm italic text-blue-800 text-center">
+                <span className="font-semibold block mb-1">Rezumat AI:</span> {simulatedDescription}
               </p>
             </div>
           )}

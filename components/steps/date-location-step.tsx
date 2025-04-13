@@ -6,11 +6,29 @@ import { Label } from "@/components/ui/label"
 import { Loader2, MapPin } from "lucide-react"
 import { useFormContext } from "react-hook-form"
 import type { AccidentFormData } from "@/lib/types"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function DateLocationStep() {
   const { register, setValue, getValues } = useFormContext<AccidentFormData>()
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+
+  useEffect(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+
+    setValue("dateTime.date", `${year}-${month}-${day}`);
+    setValue("dateTime.time", `${hours}:${minutes}`);
+
+    // Prefill location fields
+    setValue("location.city", "Chișinău");
+    setValue("location.street", "Strada Studenților");
+    setValue("location.number", "10");
+
+  }, [setValue]);
 
   const handleUseCurrentLocation = () => {
     setIsLoadingLocation(true)
@@ -24,22 +42,22 @@ export default function DateLocationStep() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
+    <div className="space-y-4">
+      <div className="space-y-2">
         <h3 className="text-lg font-medium">Data și Ora Accidentului</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="space-y-1">
             <Label htmlFor="date">Data</Label>
             <Input id="date" type="date" {...register("dateTime.date")} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="time">Ora</Label>
             <Input id="time" type="time" {...register("dateTime.time")} />
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">Locația Accidentului</h3>
           <Button
@@ -55,16 +73,16 @@ export default function DateLocationStep() {
           </Button>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
+        <div className="space-y-3">
+          <div className="space-y-1.5">
             <Label htmlFor="city">Localitate</Label>
             <Input id="city" placeholder="Ex: Chișinău" {...register("location.city")} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="street">Stradă</Label>
             <Input id="street" placeholder="Ex: Bulevardul Ștefan cel Mare" {...register("location.street")} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="number">Nr. / Bornă Kilometrică (opțional)</Label>
             <Input id="number" placeholder="Ex: 42 sau km 12+500" {...register("location.number")} />
           </div>
