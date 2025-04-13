@@ -17,8 +17,8 @@ export default function DateLocationStep() {
     // Simulate fetching location
     setTimeout(() => {
       setValue("location.city", "Chișinău")
-      setValue("location.street", "Bulevardul Ștefan cel Mare și Sfânt")
-      setValue("location.number", "162")
+      setValue("location.street", "Strada Studenților")
+      setValue("location.number", "10")
       setIsLoadingLocation(false)
     }, 1500)
   }

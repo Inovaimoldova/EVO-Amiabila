@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useConversation } from "@11labs/react"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Mic, PhoneOff, Loader } from "lucide-react"
 import ConditionsStep from "./steps/conditions-step"
 import CollaborativeStep from "./steps/collaborative-step"
 import DateLocationStep from "./steps/date-location-step"
@@ -37,6 +38,7 @@ export default function AccidentReportForm() {
   const [isPartyBConfirmed, setIsPartyBConfirmed] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
+  const [micPermission, setMicPermission] = useState(false)
 
   const methods = useForm<AccidentFormData>({
     defaultValues: {
@@ -151,6 +153,84 @@ export default function AccidentReportForm() {
     },
   })
 
+  const { status, startSession, endSession, isSpeaking } = useConversation({
+  })
+  const agentId = "dBAEMiC0EVY9tu6ngt51"
+
+  const requestMicPermission = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true })
+      setMicPermission(true)
+      console.log("Microphone access granted.")
+    } catch (error) {
+      console.error("Microphone access denied:", error)
+      setMicPermission(false)
+      alert("Microphone access is required for the AI assistant.")
+    }
+  }
+
+  const startConversation = async () => {
+    if (!micPermission) {
+      console.log("Requesting mic permission before starting...")
+      await requestMicPermission()
+      return
+    }
+
+    if (status === 'disconnected') {
+      try {
+        console.log("Starting conversation session...")
+        await startSession({ agentId })
+        console.log("Conversation session started.")
+      } catch (error) {
+        console.error("Error starting conversation session:", error)
+        alert("Failed to start the AI assistant. Please try again.")
+      }
+    } else {
+      console.log("Conversation already connecting or connected. Status:", status)
+    }
+  }
+
+  const stopConversation = async () => {
+    if (status === 'connected' || status === 'connecting') {
+      try {
+        console.log("Ending conversation session...")
+        await endSession()
+        console.log("Conversation session ended.")
+      } catch (error) {
+        console.error("Error ending conversation session:", error)
+        alert("Failed to stop the AI assistant properly.")
+      }
+    } else {
+      console.log("Conversation not active. Status:", status)
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.permissions) {
+      navigator.permissions.query({ name: 'microphone' as PermissionName }).then((permissionStatus) => {
+        setMicPermission(permissionStatus.state === 'granted')
+        console.log("Initial mic permission state:", permissionStatus.state)
+        permissionStatus.onchange = () => {
+          console.log("Mic permission state changed to:", permissionStatus.state)
+          const hasPermission = permissionStatus.state === 'granted'
+          setMicPermission(hasPermission)
+          if (!hasPermission && status === 'connected') {
+            console.log("Mic permission revoked, stopping conversation.")
+            stopConversation()
+          }
+        }
+      }).catch(error => {
+        console.error("Could not query microphone permissions:", error)
+        setMicPermission(false)
+      })
+    } else if (typeof window === 'undefined') {
+      console.log("Not in browser environment, skipping mic permission check.")
+    } else {
+      console.log("navigator.permissions API not supported.")
+      setMicPermission(false)
+    }
+  }, [status])
+
   const progress = ((currentStep + 1) / STEPS.length) * 100
 
   const handleNext = () => {
@@ -169,10 +249,13 @@ export default function AccidentReportForm() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    // Simulate form submission
+    console.log("Simulating final form submission:", methods.getValues())
     await new Promise((resolve) => setTimeout(resolve, 2000))
     setIsSubmitting(false)
     setIsCompleted(true)
+    if (status === 'connected') {
+      stopConversation()
+    }
   }
 
   const renderStep = () => {
@@ -226,7 +309,7 @@ export default function AccidentReportForm() {
 
   return (
     <FormProvider {...methods}>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="bg-white shadow-md rounded-lg overflow-hidden bg-[url('/evo-pattern.png')] bg-no-repeat bg-right-top mb-20">
         <div className="p-3 sm:p-4 border-b border-gray-200">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">{STEPS[currentStep]}</h2>
@@ -239,7 +322,7 @@ export default function AccidentReportForm() {
 
         <div className="p-3 sm:p-6">{renderStep()}</div>
 
-        {currentStep > 0 && currentStep < STEPS.length && (
+        {currentStep > 0 && currentStep < STEPS.length - 1 && (
           <div className="p-3 sm:p-4 border-t border-gray-200 flex justify-between">
             <Button variant="outline" onClick={handleBack} className="flex items-center gap-1 text-gray-700">
               <ChevronLeft className="h-4 w-4" />
@@ -256,6 +339,38 @@ export default function AccidentReportForm() {
               </Button>
             )}
           </div>
+        )}
+      </div>
+
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+        {!micPermission ? (
+          <Button onClick={requestMicPermission} title="Request Microphone Permission" className="bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12">
+            <Mic className="h-6 w-6" />
+            <span className="sr-only">Request Mic Permission</span>
+          </Button>
+        ) : status === 'disconnected' ? (
+          <Button onClick={startConversation} title="Start AI Assistant" className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12">
+            <Mic className="h-6 w-6" />
+            <span className="sr-only">Start AI Assistant</span>
+          </Button>
+        ) : status === 'connecting' ? (
+          <Button disabled title="Connecting..." className="bg-gray-400 text-white p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12 cursor-not-allowed">
+            <Loader className="h-6 w-6 animate-spin" />
+            <span className="sr-only">Connecting...</span>
+          </Button>
+        ) : (
+          <Button onClick={stopConversation} title={isSpeaking ? "Assistant Speaking... Click to Stop" : "Stop AI Assistant"} className={`p-3 rounded-full shadow-lg flex items-center justify-center w-12 h-12 ${isSpeaking ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-blue-sky-600 hover:bg-blue-sky-700'} text-white`}>
+            {isSpeaking ? (
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+              </span>
+            ) : (
+              <PhoneOff className="h-6 w-6" />
+            )}
+
+            <span className="sr-only">{isSpeaking ? "Assistant Speaking... Click to Stop" : "Stop AI Assistant"}</span>
+          </Button>
         )}
       </div>
     </FormProvider>

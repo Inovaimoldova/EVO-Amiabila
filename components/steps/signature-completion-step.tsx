@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Download, Loader2, Mail, Shield, CheckCheck } from "lucide-react"
+import { CheckCircle2, Download, Loader2, Mail, Shield, CheckCheck, UploadCloud } from "lucide-react"
 import { useFormContext } from "react-hook-form"
 import type { AccidentFormData } from "@/lib/types"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface SignatureCompletionStepProps {
   isSubmitting: boolean
@@ -17,10 +17,20 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
   const { setValue, getValues } = useFormContext<AccidentFormData>()
   const [isSigningA, setIsSigningA] = useState(false)
   const [isSigningB, setIsSigningB] = useState(false)
+  const [referenceNumber, setReferenceNumber] = useState<string | null>(null)
+  const [showJson, setShowJson] = useState(false)
+  const [jsonData, setJsonData] = useState("")
 
   const signatureA = getValues("signatures.partyA")
   const signatureB = getValues("signatures.partyB")
   const driverAName = `${getValues("driverA.firstName")} ${getValues("driverA.lastName")}`
+
+  const handleSimulateSendToEvo = () => {
+    const formData = getValues()
+    const jsonString = JSON.stringify(formData, null, 2)
+    setJsonData(jsonString)
+    setShowJson(true)
+  }
 
   const handleSignA = () => {
     setIsSigningA(true)
@@ -40,7 +50,34 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
     }, 1500)
   }
 
+  useEffect(() => {
+    if (isCompleted && !referenceNumber) {
+      const newRefNumber = `CAA-${Math.floor(Math.random() * 1000000)}`
+      setReferenceNumber(newRefNumber)
+    }
+  }, [isCompleted, referenceNumber])
+
   if (isCompleted) {
+    if (!referenceNumber) {
+      return null;
+    }
+
+    if (showJson) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">Date Simulate Trimise către EVO (JSON)</h3>
+          <Card className="p-4 border-gray-200 shadow-sm max-h-[500px] overflow-auto">
+            <pre className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+              {jsonData}
+            </pre>
+          </Card>
+          <Button variant="outline" onClick={() => setShowJson(false)}>
+            Înapoi la Sumar
+          </Button>
+        </div>
+      )
+    }
+
     return (
       <div className="space-y-6 text-center">
         <CheckCircle2 className="h-12 w-12 sm:h-16 sm:w-16 text-green-600 mx-auto" />
@@ -50,7 +87,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
             Constatarea amiabilă a fost trimisă cu succes!
           </h3>
           <p className="text-gray-700">
-            Număr de referință: <span className="font-medium">CAA-{Math.floor(Math.random() * 1000000)}</span>
+            Număr de referință: <span className="font-medium">CAA-{referenceNumber}</span>
           </p>
           <p className="text-gray-700 max-w-md mx-auto text-sm sm:text-base">
             O copie a constatării a fost trimisă pe email-ul dvs. și poate fi accesată oricând în istoricul
@@ -59,13 +96,25 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-          <Button className="flex items-center gap-2 bg-blue-sky-600 hover:bg-blue-sky-700 text-white">
-            <Download className="h-4 w-4" />
-            <span>Descarcă PDF</span>
-          </Button>
+          <a href="/constatare-amiabila.pdf" download={`Constatare-${referenceNumber}.pdf`}>
+            <Button
+              className="flex items-center gap-2 bg-blue-sky-600 hover:bg-blue-sky-700 text-white w-full sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              <span>Descarcă PDF</span>
+            </Button>
+          </a>
           <Button variant="outline" className="flex items-center gap-2 text-gray-700 border-gray-300">
             <Mail className="h-4 w-4" />
             <span>Retrimite pe Email</span>
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleSimulateSendToEvo}
+            className="flex items-center gap-2"
+          >
+            <UploadCloud className="h-4 w-4" />
+            <span>Trimite la EVO (Simulare)</span>
           </Button>
         </div>
 
