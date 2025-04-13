@@ -10,7 +10,7 @@ const CONDITIONS = [
   "Accidentul implică doar două vehicule",
   "Nu există răniți sau victime",
   "Ambele vehicule sunt în stare de funcționare",
-  "Ambii șoferi au asigurare RCA valabilă",
+  "Daunele materiale nu depășesc 15000 de lei",
   "Ambii șoferi sunt prezenți la locul accidentului",
   "Ambii șoferi sunt de acord să completeze constatarea amiabilă",
 ]
@@ -59,7 +59,7 @@ export default function ConditionsStep({ onConfirm }: ConditionsStepProps) {
         className="w-full mt-6 bg-blue-sky-600 hover:bg-blue-sky-700 text-white"
         size="lg"
       >
-        Confirm că sunt îndeplinite condițiile și Continuă
+        Continuă
       </Button>
     </div>
   )
