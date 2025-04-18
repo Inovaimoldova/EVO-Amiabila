@@ -219,7 +219,7 @@ export default function ImpactPointStep({ data, updateData, onContinue, onBack }
   );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
       <h2 className="text-xl font-semibold">Punctul Inițial de Impact</h2>
 
       <p className="text-sm text-gray-500">
@@ -229,7 +229,7 @@ export default function ImpactPointStep({ data, updateData, onContinue, onBack }
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Use grid for better layout */}
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-medium text-center mb-2">Vehicul A (Al Meu)</h3>
+            <h3 className="font-semibold text-center mb-2">Vehicul A (Al Meu)</h3>
             {/* Container for SVG with aspect ratio padding hack */}
             <div className="relative w-full bg-gray-50 border border-gray-300 rounded-md mb-2 overflow-hidden" style={{ paddingBottom: '170%' }}> {/* Adjust padding % based on viewBox ratio (340/200 * 100) */}
               <SvgCar
@@ -247,7 +247,7 @@ export default function ImpactPointStep({ data, updateData, onContinue, onBack }
 
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-medium text-center mb-2">Vehicul B (Celălalt)</h3>
+            <h3 className="font-semibold text-center mb-2">Vehicul B (Celălalt)</h3>
              {/* Container for SVG */}
             <div className="relative w-full bg-gray-50 border border-gray-300 rounded-md mb-2 overflow-hidden" style={{ paddingBottom: '170%' }}>
                <SvgCar

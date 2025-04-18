@@ -58,9 +58,9 @@ export default function WitnessesStep() {
   }, [hasWitnesses, setValue])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Martori</h3>
+        <h3 className="text-lg font-semibold">Martori</h3>
         <p className="text-gray-600">Dacă există martori la accident, adăugați datele lor de contact.</p>
 
         <div className="space-y-3">
@@ -87,7 +87,11 @@ export default function WitnessesStep() {
       {hasWitnesses && (
         <div className="space-y-6">
           {witnesses.map((witness, index) => (
-            <div key={witness.id} className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
+            <div
+              key={witness.id}
+              className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4 relative"
+              style={{ backgroundColor: '#D6E5F8' }}
+            >
               <div className="flex justify-between items-center">
                 <h4 className="font-medium">Martor {index + 1}</h4>
                 <Button

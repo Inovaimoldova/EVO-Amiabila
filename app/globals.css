@@ -137,11 +137,6 @@
   border-color: rgba(229, 231, 235, 0.8);
 }
 
-/* Add subtle alternating backgrounds for better visual separation */
-.grid > div:nth-child(odd) {
-  background-color: rgba(249, 250, 251, 0.5);
-}
-
 /* Add subtle hover effect on interactive elements */
 .cursor-pointer:hover {
   opacity: 0.85;

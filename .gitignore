@@ -1,1 +1,16 @@
 node_modules
+
+# Next.js specific
+.next/
+.swc/
+out/
+
+# Environment variables
+# Make sure .env.example is checked in!
+.env*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log

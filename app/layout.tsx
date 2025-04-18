@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Onest, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Analytics } from "@vercel/analytics/react"
 
 const onest = Onest({
   subsets: ["latin"],

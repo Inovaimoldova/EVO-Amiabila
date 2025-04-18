@@ -1,12 +1,14 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { useFormContext, useWatch } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { AccidentFormData } from "@/lib/types"
-import { Upload, Loader } from "lucide-react"
+import { Upload, Loader, X } from "lucide-react"
 import Image from "next/image"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 // Define vehicle areas with their labels and SVG properties
 const vehicleAreas = [
@@ -33,36 +35,75 @@ const getAreaLabel = (areaId: string | null) => {
   return area ? area.label : null
 }
 
+// Helper to safely split the potentially null/string value into an array
+const getPointsArray = (value: string | null | undefined): string[] => {
+  if (typeof value === 'string' && value.length > 0) {
+    return value.split(',');
+  } 
+  return [];
+};
+
 export default function ImpactPointStep() {
-  const { control, setValue, getValues } = useFormContext<AccidentFormData>()
+  const { control, setValue, getValues, register } = useFormContext<AccidentFormData>()
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showSimulatedImage, setShowSimulatedImage] = useState(false);
   const [simulatedDescription, setSimulatedDescription] = useState<string | null>(null);
+  const [accidentPhotos, setAccidentPhotos] = useState<string[]>(getValues("damages.vehicleA.photos") || []);
 
-  // Watch the specific field, let TS infer type, provide static default
-  const impactPoints = useWatch({
+  // Ref for single hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Watch the raw value (string | null)
+  const impactPointsRaw = useWatch({
     control,
     name: "impactPoints",
-    defaultValue: { vehicleA: null, vehicleB: null }
+    defaultValue: { vehicleA: null, vehicleB: null } // Keep original default type
   })
 
-  // Ensure we have a fallback object
-  const currentPoints = impactPoints ?? { vehicleA: null, vehicleB: null };
+  // Derive arrays for internal use
+  const currentPoints = {
+    vehicleA: getPointsArray(impactPointsRaw?.vehicleA),
+    vehicleB: getPointsArray(impactPointsRaw?.vehicleB)
+  };
 
   const handleVehicleAClick = (area: string) => {
-    const newValue = { 
-      ...currentPoints, 
-      vehicleA: area === currentPoints.vehicleA ? null : area 
+    const currentSelectionA = currentPoints.vehicleA; // Already an array here
+    let newSelectionA: string[];
+
+    if (currentSelectionA.includes(area)) {
+      newSelectionA = currentSelectionA.filter(p => p !== area);
+    } else {
+      newSelectionA = [...currentSelectionA, area];
+    }
+    
+    // Join the array back into a string for storage
+    const stringValueA = newSelectionA.join(',');
+    
+    const newValueForForm = { 
+      ...(impactPointsRaw ?? { vehicleA: null, vehicleB: null }), // Start with raw values
+      vehicleA: stringValueA || null // Store string or null
     };
-    setValue("impactPoints", newValue, { shouldDirty: true, shouldTouch: true });
+    setValue("impactPoints", newValueForForm, { shouldDirty: true, shouldTouch: true });
   }
 
   const handleVehicleBClick = (area: string) => {
-    const newValue = { 
-      ...currentPoints, 
-      vehicleB: area === currentPoints.vehicleB ? null : area 
+    const currentSelectionB = currentPoints.vehicleB; // Already an array here
+    let newSelectionB: string[];
+
+    if (currentSelectionB.includes(area)) {
+      newSelectionB = currentSelectionB.filter(p => p !== area);
+    } else {
+      newSelectionB = [...currentSelectionB, area];
+    }
+
+    // Join the array back into a string for storage
+    const stringValueB = newSelectionB.join(',');
+
+    const newValueForForm = { 
+      ...(impactPointsRaw ?? { vehicleA: null, vehicleB: null }), // Start with raw values
+      vehicleB: stringValueB || null // Store string or null
     };
-    setValue("impactPoints", newValue, { shouldDirty: true, shouldTouch: true });
+    setValue("impactPoints", newValueForForm, { shouldDirty: true, shouldTouch: true });
   }
 
   // --- Simulation Function ---
@@ -75,14 +116,18 @@ export default function ImpactPointStep() {
     // Simulate network delay and processing time
     await new Promise(resolve => setTimeout(resolve, 2500)); 
 
-    // Simulate AI analysis results: preselect specific points
-    const simulatedPoints = {
-      vehicleA: "front-bumper",
-      vehicleB: "rear-right-fender"
+    // Simulate points as arrays, then join for storage
+    const simulatedPointsArrays = {
+      vehicleA: ["front-bumper"],
+      vehicleB: ["rear-right-fender"]
+    };
+    const simulatedPointsStrings = {
+      vehicleA: simulatedPointsArrays.vehicleA.join(','),
+      vehicleB: simulatedPointsArrays.vehicleB.join(',')
     };
 
-    setValue("impactPoints", simulatedPoints, { shouldDirty: true, shouldTouch: true });
-    console.log("Simulated analysis complete. Impact points set:", simulatedPoints);
+    setValue("impactPoints", simulatedPointsStrings, { shouldDirty: true, shouldTouch: true });
+    console.log("Simulated analysis complete. Impact points set (as strings):", simulatedPointsStrings);
     
     setSimulatedDescription("Analiza AI indică un impact frontal (Bară Față) pentru Vehiculul A și un impact în zona aripii dreapta spate pentru Vehiculul B.");
     setShowSimulatedImage(true);
@@ -90,8 +135,70 @@ export default function ImpactPointStep() {
   };
   // --- End Simulation Function ---
 
-  // Reusable SVG Car Component
-  const SvgCar = ({ selectedPoint, handleClick }: { selectedPoint: string | null, handleClick: (area: string) => void }) => (
+  // --- Photo Handlers (Consolidated) ---
+  const MAX_PHOTOS = 5;
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const currentTotalPhotos = accidentPhotos.length;
+    const allowedNewPhotos = MAX_PHOTOS - currentTotalPhotos;
+
+    if (allowedNewPhotos <= 0) {
+      alert(`Puteți încărca maxim ${MAX_PHOTOS} fotografii în total.`);
+      return;
+    }
+
+    const newPhotoPreviews: string[] = [];
+    // TEMPORARILY using vehicleA.photos for storage
+    const currentFormDataPhotos = getValues("damages.vehicleA.photos") || [];
+    const newPhotoFormData: string[] = [...currentFormDataPhotos];
+
+    const filesToProcess = Array.from(files).slice(0, allowedNewPhotos);
+
+    filesToProcess.forEach(file => {
+      if (file.type.startsWith("image/")) {
+        const previewUrl = URL.createObjectURL(file);
+        newPhotoPreviews.push(previewUrl);
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result && typeof e.target.result === 'string') {
+            newPhotoFormData.push(e.target.result);
+            // TEMPORARILY using vehicleA.photos for storage
+             setValue("damages.vehicleA.photos", newPhotoFormData, { shouldDirty: true });
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Update preview state
+    setAccidentPhotos(prev => [...prev, ...newPhotoPreviews]);
+
+    // Clear the file input value
+    event.target.value = ""; 
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    // TEMPORARILY using vehicleA.photos for storage
+    const currentFormDataPhotos = getValues("damages.vehicleA.photos") || [];
+
+    // Revoke object URL for the preview being removed
+    URL.revokeObjectURL(accidentPhotos[index]);
+
+    const updatedPreviews = accidentPhotos.filter((_, i) => i !== index);
+    const updatedFormData = currentFormDataPhotos.filter((_, i) => i !== index);
+
+    setAccidentPhotos(updatedPreviews);
+    // TEMPORARILY using vehicleA.photos for storage
+    setValue("damages.vehicleA.photos", updatedFormData, { shouldDirty: true });
+  };
+  // --- End Photo Handlers ---
+
+  // Reusable SVG Car Component - updated to accept selectedPoints array
+  const SvgCar = ({ selectedPoints, handleClick }: { selectedPoints: string[], handleClick: (area: string) => void }) => (
     <svg viewBox="0 0 200 340" className="absolute inset-0 w-full h-full p-2 sm:p-4"> {/* Adjusted viewBox */}
       {/* Apply common styles to group */}
       <g stroke="#4a5568" strokeWidth="0.8" fill="#f7fafc">
@@ -100,58 +207,59 @@ export default function ImpactPointStep() {
         {/* Front Bumper - Curved Path */}
         <path
           d="M 60 20 Q 100 5 140 20 L 145 40 L 55 40 Z"
-          fill={selectedPoint === "front-bumper" ? "#fed7d7" : "#e2e8f0"}
-          stroke={selectedPoint === "front-bumper" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "front-bumper" ? "1.5" : "0.8"}
+          // Check if area is included in the array
+          fill={selectedPoints.includes("front-bumper") ? "#fed7d7" : "#e2e8f0"}
+          stroke={selectedPoints.includes("front-bumper") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("front-bumper") ? "1.5" : "0.8"}
           onClick={() => handleClick("front-bumper")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Hood */}
         <rect x="55" y="40" width="90" height="50" rx="3"
-          fill={selectedPoint === "hood" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "hood" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "hood" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("hood") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("hood") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("hood") ? "1.5" : "0.8"}
           onClick={() => handleClick("hood")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Windshield */}
         <rect x="60" y="90" width="80" height="35" rx="5"
-          fill={selectedPoint === "windshield" ? "#fed7d7" : "#ebf8ff"} // Light blue for glass
-          stroke={selectedPoint === "windshield" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "windshield" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("windshield") ? "#fed7d7" : "#ebf8ff"} // Light blue for glass
+          stroke={selectedPoints.includes("windshield") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("windshield") ? "1.5" : "0.8"}
           onClick={() => handleClick("windshield")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Roof */}
         <rect x="55" y="125" width="90" height="90" rx="5"
-          fill={selectedPoint === "roof" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "roof" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "roof" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("roof") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("roof") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("roof") ? "1.5" : "0.8"}
           onClick={() => handleClick("roof")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Rear Window */}
         <rect x="60" y="215" width="80" height="35" rx="5"
-          fill={selectedPoint === "rear-window" ? "#fed7d7" : "#ebf8ff"} // Light blue for glass
-          stroke={selectedPoint === "rear-window" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "rear-window" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("rear-window") ? "#fed7d7" : "#ebf8ff"} // Light blue for glass
+          stroke={selectedPoints.includes("rear-window") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("rear-window") ? "1.5" : "0.8"}
           onClick={() => handleClick("rear-window")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Trunk */}
         <rect x="55" y="250" width="90" height="50" rx="3"
-          fill={selectedPoint === "trunk" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "trunk" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "trunk" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("trunk") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("trunk") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("trunk") ? "1.5" : "0.8"}
           onClick={() => handleClick("trunk")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Rear Bumper - Curved Path */}
         <path
           d="M 55 300 L 145 300 Q 100 325 55 300 Z"
-           fill={selectedPoint === "rear-bumper" ? "#fed7d7" : "#e2e8f0"}
-           stroke={selectedPoint === "rear-bumper" ? "#e53e3e" : "#4a5568"}
-           strokeWidth={selectedPoint === "rear-bumper" ? "1.5" : "0.8"}
+           fill={selectedPoints.includes("rear-bumper") ? "#fed7d7" : "#e2e8f0"}
+           stroke={selectedPoints.includes("rear-bumper") ? "#e53e3e" : "#4a5568"}
+           strokeWidth={selectedPoints.includes("rear-bumper") ? "1.5" : "0.8"}
            onClick={() => handleClick("rear-bumper")} style={{ cursor: "pointer" }}
            className="car-part hover:opacity-80 transition-opacity"
         />
@@ -159,33 +267,33 @@ export default function ImpactPointStep() {
         {/* --- Left Side --- */}
         {/* Front Left Fender */}
         <rect x="30" y="40" width="25" height="50" rx="5"
-          fill={selectedPoint === "front-left-fender" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "front-left-fender" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "front-left-fender" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("front-left-fender") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("front-left-fender") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("front-left-fender") ? "1.5" : "0.8"}
           onClick={() => handleClick("front-left-fender")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Front Left Door */}
         <rect x="30" y="125" width="25" height="45" rx="3"
-          fill={selectedPoint === "front-left-door" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "front-left-door" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "front-left-door" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("front-left-door") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("front-left-door") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("front-left-door") ? "1.5" : "0.8"}
           onClick={() => handleClick("front-left-door")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Rear Left Door */}
         <rect x="30" y="170" width="25" height="45" rx="3"
-          fill={selectedPoint === "rear-left-door" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "rear-left-door" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "rear-left-door" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("rear-left-door") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("rear-left-door") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("rear-left-door") ? "1.5" : "0.8"}
           onClick={() => handleClick("rear-left-door")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Rear Left Fender */}
         <rect x="30" y="250" width="25" height="50" rx="5"
-          fill={selectedPoint === "rear-left-fender" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "rear-left-fender" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "rear-left-fender" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("rear-left-fender") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("rear-left-fender") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("rear-left-fender") ? "1.5" : "0.8"}
           onClick={() => handleClick("rear-left-fender")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
@@ -193,33 +301,33 @@ export default function ImpactPointStep() {
         {/* --- Right Side --- */}
         {/* Front Right Fender */}
         <rect x="145" y="40" width="25" height="50" rx="5"
-          fill={selectedPoint === "front-right-fender" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "front-right-fender" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "front-right-fender" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("front-right-fender") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("front-right-fender") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("front-right-fender") ? "1.5" : "0.8"}
           onClick={() => handleClick("front-right-fender")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Front Right Door */}
         <rect x="145" y="125" width="25" height="45" rx="3"
-          fill={selectedPoint === "front-right-door" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "front-right-door" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "front-right-door" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("front-right-door") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("front-right-door") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("front-right-door") ? "1.5" : "0.8"}
           onClick={() => handleClick("front-right-door")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Rear Right Door */}
         <rect x="145" y="170" width="25" height="45" rx="3"
-          fill={selectedPoint === "rear-right-door" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "rear-right-door" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "rear-right-door" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("rear-right-door") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("rear-right-door") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("rear-right-door") ? "1.5" : "0.8"}
           onClick={() => handleClick("rear-right-door")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
         {/* Rear Right Fender */}
         <rect x="145" y="250" width="25" height="50" rx="5"
-          fill={selectedPoint === "rear-right-fender" ? "#fed7d7" : "#f7fafc"}
-          stroke={selectedPoint === "rear-right-fender" ? "#e53e3e" : "#4a5568"}
-          strokeWidth={selectedPoint === "rear-right-fender" ? "1.5" : "0.8"}
+          fill={selectedPoints.includes("rear-right-fender") ? "#fed7d7" : "#f7fafc"}
+          stroke={selectedPoints.includes("rear-right-fender") ? "#e53e3e" : "#4a5568"}
+          strokeWidth={selectedPoints.includes("rear-right-fender") ? "1.5" : "0.8"}
           onClick={() => handleClick("rear-right-fender")} style={{ cursor: "pointer" }}
           className="car-part hover:opacity-80 transition-opacity"
         />
@@ -248,9 +356,56 @@ export default function ImpactPointStep() {
   );
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Punctul Inițial de Impact</h2>
+    <div className="space-y-6 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Puncte de Impact</h3>
+        <p className="text-gray-600">
+          Selectați zonele principale de impact pentru fiecare vehicul. Puteți selecta doar o zonă per vehicul.
+        </p>
+      </div>
 
+      {/* Consolidated Photo Upload Section */}
+      <div className="space-y-3 p-4 rounded-lg border border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
+        <h4 className="font-semibold text-gray-800">Fotografii Accident (Max {MAX_PHOTOS} Total)</h4>
+         <div className="space-y-2">
+           {/* <Label>Fotografii</Label> Optional label */}
+           <Button
+             type="button"
+             variant="outline"
+             className="w-full bg-white border-gray-300 text-gray-700"
+             onClick={() => fileInputRef.current?.click()}
+             disabled={accidentPhotos.length >= MAX_PHOTOS} // Disable if max reached
+           >
+             <Upload className="mr-2 h-4 w-4" /> Încarcă Fotografii
+           </Button>
+           <input
+             type="file"
+             ref={fileInputRef}
+             multiple
+             accept="image/*"
+             onChange={handleFileChange} // Use consolidated handler
+             className="hidden"
+           />
+           {accidentPhotos.length > 0 && (
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-2">
+               {accidentPhotos.map((photoUrl, index) => (
+                 <div key={index} className="relative aspect-square border rounded overflow-hidden shadow-sm">
+                   <Image src={photoUrl} alt={`Accident Photo ${index + 1}`} layout="fill" objectFit="cover" />
+                   <Button
+                     type="button"
+                     variant="destructive"
+                     size="icon"
+                     className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-80 hover:opacity-100"
+                     onClick={() => handleRemovePhoto(index)} // Use consolidated handler
+                   >
+                     <X className="h-4 w-4" />
+                   </Button>
+                 </div>
+               ))}
+             </div>
+           )}
+         </div>
+       </div>
 
       {/* --- Simulation Button --- */}
       <div className="my-4 text-center">
@@ -264,7 +419,7 @@ export default function ImpactPointStep() {
           ) : (
             <Upload className="h-4 w-4" />
           )}
-          {isAnalyzing ? "Analizând Imaginea..." : "Simulare Încărcare accident.png & Analiză AI"}
+          {isAnalyzing ? "Analizând Imaginea..." : "Analiză AI"}
         </Button>
       </div>
       {/* --- End Simulation Button --- */}
@@ -295,45 +450,41 @@ export default function ImpactPointStep() {
       )}
       {/* --- End Simulated Image & Description Display --- */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Use grid for better layout */}
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-medium text-center mb-2">Vehicul A (Al Meu)</h3>
-            {/* Container for SVG with aspect ratio padding hack */}
-            <div className="relative w-full bg-gray-50 border border-gray-300 rounded-md mb-2 overflow-hidden" style={{ paddingBottom: '170%' }}> {/* Remove backslashes */}
-              <SvgCar
-                selectedPoint={currentPoints.vehicleA} // Use safe watched data
-                handleClick={handleVehicleAClick}
-               />
-            </div>
-            <p className="text-sm text-center h-5"> {/* Fixed height to prevent layout shift */}
-              {currentPoints.vehicleA // Use safe watched data
-                ? `Punct selectat: ${getAreaLabel(currentPoints.vehicleA)}`
-                : "Niciun punct selectat"}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+        {/* Vehicle A */}
+        <div className="space-y-2">
+          <h4 className="text-center font-semibold text-gray-800">Vehicul A (Dvs.)</h4>
+          <Card className="border-gray-300 shadow-sm relative aspect-[2/3]">
+            <CardContent className="p-0 w-full h-full">
+              {/* Pass the derived array to SvgCar */}
+              <SvgCar selectedPoints={currentPoints.vehicleA} handleClick={handleVehicleAClick} />
+            </CardContent>
+          </Card>
+          {/* Use the derived array for label display */}
+          <p className="text-sm text-center min-h-[40px] px-2">
+            {currentPoints.vehicleA.length > 0
+              ? `Puncte: ${currentPoints.vehicleA.map(getAreaLabel).filter(Boolean).join(", ")}`
+              : "Niciun punct selectat"}
+          </p>
+        </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-medium text-center mb-2">Vehicul B (Celălalt)</h3>
-             {/* Container for SVG */}
-            <div className="relative w-full bg-gray-50 border border-gray-300 rounded-md mb-2 overflow-hidden" style={{ paddingBottom: '170%' }}> {/* Remove backslashes */}
-               <SvgCar
-                  selectedPoint={currentPoints.vehicleB} // Use safe watched data
-                  handleClick={handleVehicleBClick}
-               />
-            </div>
-            <p className="text-sm text-center h-5"> {/* Fixed height */}
-              {currentPoints.vehicleB // Use safe watched data
-                ? `Punct selectat: ${getAreaLabel(currentPoints.vehicleB)}`
-                : "Niciun punct selectat"}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Vehicle B */}
+        <div className="space-y-2">
+          <h4 className="text-center font-semibold text-gray-800">Vehicul B</h4>
+          <Card className="border-gray-300 shadow-sm relative aspect-[2/3]">
+            <CardContent className="p-0 w-full h-full">
+               {/* Pass the derived array to SvgCar */}
+              <SvgCar selectedPoints={currentPoints.vehicleB} handleClick={handleVehicleBClick} />
+            </CardContent>
+          </Card>
+           {/* Use the derived array for label display */}
+          <p className="text-sm text-center min-h-[40px] px-2">
+            {currentPoints.vehicleB.length > 0
+              ? `Puncte: ${currentPoints.vehicleB.map(getAreaLabel).filter(Boolean).join(", ")}`
+              : "Niciun punct selectat"}
+          </p>
+        </div>
       </div>
-
-      {/* Navigation buttons are handled by parent */}
     </div>
   )
 }

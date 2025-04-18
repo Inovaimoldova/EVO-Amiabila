@@ -12,8 +12,8 @@ import type { AccidentFormData } from "@/lib/types"
 import { useState, useEffect, useCallback } from "react"
 
 const MOCK_VEHICLES = [
-  { id: "1", name: "Toyota Corolla (XYZ 789)", make: "Toyota", model: "Corolla", plateNumber: "XYZ 789", vin: "JT2BF22K1W0123456" },
-  { id: "2", name: "Volkswagen Golf (ABC 123)", make: "Volkswagen", model: "Golf", plateNumber: "ABC 123", vin: "WVWZZZ1KZAW123456" },
+  { id: "1", name: "Toyota Corolla (XYZ 789)", make: "Toyota", model: "Corolla", plateNumber: "XYZ 789", vin: "JT2BF22K1W0123456", techInspectionValidUntil: "2024-10-15" },
+  { id: "2", name: "Volkswagen Golf (ABC 123)", make: "Volkswagen", model: "Golf", plateNumber: "ABC 123", vin: "WVWZZZ1KZAW123456", techInspectionValidUntil: "2025-03-01" },
 ]
 
 const MOCK_INSURANCE = [
@@ -21,12 +21,31 @@ const MOCK_INSURANCE = [
   { id: "2", name: "MOLDASIG - Poliță RCA 87654321", company: "MOLDASIG", policyNumber: "87654321", validFrom: "2023-03-15", validTo: "2024-03-15", insuredName: "Ion Popescu", insuredAddress: "Str. Independenței 12, Chișinău" },
 ]
 
+// --- Mock CASCO Data ---
+const MOCK_CASCO = [
+  { id: "casco1", name: "GRAWE - CASCO C123", company: "GRAWE Carat", policyNumber: "C123", validTo: "2024-11-30" },
+  { id: "casco2", name: "ASITO - CASCO C456", company: "ASITO", policyNumber: "C456", validTo: "2025-02-10" },
+]
+
 // Helper component for compact display
 function ReadOnlyField({ label, value }: { label: string; value?: string }) {
+  // Simple date formatter for DD.MM.YYYY
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr || !/\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr || "-";
+    try {
+      return dateStr.split('-').reverse().join('.');
+    } catch (e) {
+      return dateStr; // Return original if format fails
+    }
+  };
+
+  // Determine if the value likely represents a date (YYYY-MM-DD)
+  const isDate = value && /\d{4}-\d{2}-\d{2}/.test(value);
+
   return (
     <div className="text-sm">
       <span className="text-gray-500">{label}: </span>
-      <span className="text-gray-900 font-medium break-words">{value || "-"}</span>
+      <span className="text-gray-900 font-medium break-words">{isDate ? formatDate(value) : value || "-"}</span>
     </div>
   )
 }
@@ -36,22 +55,29 @@ export default function PartyADataStep() {
   const [isLoadingEvo, setIsLoadingEvo] = useState(false)
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("1")
   const [selectedInsuranceId, setSelectedInsuranceId] = useState<string>("1")
+  const [selectedCascoId, setSelectedCascoId] = useState<string>("")
   const [isEditingVehicle, setIsEditingVehicle] = useState(false)
   const [isEditingInsurance, setIsEditingInsurance] = useState(false)
+  const [isEditingCasco, setIsEditingCasco] = useState(false)
   const [isAddingNewVehicle, setIsAddingNewVehicle] = useState(false)
   const [isAddingNewInsurance, setIsAddingNewInsurance] = useState(false)
-  const [isEditingDriver, setIsEditingDriver] = useState(false) // State for driver editing
+  const [isAddingNewCasco, setIsAddingNewCasco] = useState(false)
+  const [isEditingDriver, setIsEditingDriver] = useState(false)
 
-  const hasTrailer = watch("vehicleA.hasTrailer") // Watch trailer state directly
+  const hasTrailer = watch("vehicleA.hasTrailer")
 
   // --- Watched Values for Read-Only Displays ---
   const vehicleMake = useWatch({ control, name: "vehicleA.make" })
   const vehicleModel = useWatch({ control, name: "vehicleA.model" })
   const vehiclePlate = useWatch({ control, name: "vehicleA.plateNumber" })
-  const vehicleVin = useWatch({ control, name: "vehicleA.vin" }) // Watch VIN
+  const vehicleVin = useWatch({ control, name: "vehicleA.vin" })
+  const vehicleTechInspection = useWatch({ control, name: "vehicleA.techInspectionValidUntil" })
   const insuranceCompany = useWatch({ control, name: "vehicleA.insurance.company" })
   const insurancePolicy = useWatch({ control, name: "vehicleA.insurance.policyNumber" })
   const insuranceValidTo = useWatch({ control, name: "vehicleA.insurance.validTo"})
+  const cascoCompany = useWatch({ control, name: "vehicleA.casco.company"})
+  const cascoPolicy = useWatch({ control, name: "vehicleA.casco.policyNumber"})
+  const cascoValidTo = useWatch({ control, name: "vehicleA.casco.validTo"})
   const driverFirstName = useWatch({ control, name: "driverA.firstName"})
   const driverLastName = useWatch({ control, name: "driverA.lastName"})
   const driverIdnp = useWatch({ control, name: "driverA.idnp"})
@@ -67,6 +93,7 @@ export default function PartyADataStep() {
         setValue("vehicleA.model", vehicle.model)
         setValue("vehicleA.plateNumber", vehicle.plateNumber)
         setValue("vehicleA.vin", vehicle.vin)
+        setValue("vehicleA.techInspectionValidUntil", vehicle.techInspectionValidUntil)
         // Don't reset trailer here, keep existing value
       }
     },
@@ -83,6 +110,22 @@ export default function PartyADataStep() {
         setValue("vehicleA.insurance.validTo", insurance.validTo)
         setValue("vehicleA.insurance.insuredName", insurance.insuredName)
         setValue("vehicleA.insurance.insuredAddress", insurance.insuredAddress)
+      }
+    },
+    [setValue]
+  )
+
+  const prefillCascoData = useCallback(
+    (cascoId: string) => {
+      const casco = MOCK_CASCO.find((c) => c.id === cascoId)
+      if (casco) {
+        setValue("vehicleA.casco.company", casco.company)
+        setValue("vehicleA.casco.policyNumber", casco.policyNumber)
+        setValue("vehicleA.casco.validTo", casco.validTo)
+      } else {
+        setValue("vehicleA.casco.company", "")
+        setValue("vehicleA.casco.policyNumber", "")
+        setValue("vehicleA.casco.validTo", "")
       }
     },
     [setValue]
@@ -105,21 +148,21 @@ export default function PartyADataStep() {
   useEffect(() => {
     if (!isAddingNewVehicle) prefillVehicleData(selectedVehicleId)
     if (!isAddingNewInsurance) prefillInsuranceData(selectedInsuranceId)
-    if (!isEditingDriver) prefillDriverData() // Prefill only if not editing
+    if (!isAddingNewCasco) prefillCascoData(selectedCascoId)
+    if (!isEditingDriver) prefillDriverData()
 
   }, [
-      setValue, prefillVehicleData, prefillInsuranceData, prefillDriverData,
-      selectedVehicleId, selectedInsuranceId,
-      isAddingNewVehicle, isAddingNewInsurance, isEditingDriver // Add dependencies
+      setValue, prefillVehicleData, prefillInsuranceData, prefillCascoData, prefillDriverData,
+      selectedVehicleId, selectedInsuranceId, selectedCascoId,
+      isAddingNewVehicle, isAddingNewInsurance, isAddingNewCasco, isEditingDriver
   ])
 
   // --- Event Handlers ---
   const handleEvoImport = () => {
     setIsLoadingEvo(true)
     setTimeout(() => {
-      prefillDriverData() // Re-apply prefilled data
+      prefillDriverData()
       setIsLoadingEvo(false)
-      // Optionally, could close the editing state: setIsEditingDriver(false)
     }, 1500)
   }
 
@@ -132,7 +175,8 @@ export default function PartyADataStep() {
       setValue("vehicleA.model", "")
       setValue("vehicleA.plateNumber", "")
       setValue("vehicleA.vin", "")
-      setValue("vehicleA.hasTrailer", false) // Reset trailer for new vehicle
+      setValue("vehicleA.techInspectionValidUntil", "")
+      setValue("vehicleA.hasTrailer", false)
       setValue("vehicleA.trailerPlate", "")
       setValue("vehicleA.trailerVin", "")
     } else {
@@ -145,8 +189,7 @@ export default function PartyADataStep() {
 
    const handleCancelAddVehicle = () => {
         setIsAddingNewVehicle(false);
-        // Reset to default vehicle (or last valid selection)
-        const targetId = MOCK_VEHICLES[0]?.id || ""; // Fallback if no vehicles
+        const targetId = MOCK_VEHICLES[0]?.id || "";
         setSelectedVehicleId(targetId);
         if (targetId) prefillVehicleData(targetId);
    }
@@ -173,11 +216,39 @@ export default function PartyADataStep() {
 
   const handleCancelAddInsurance = () => {
         setIsAddingNewInsurance(false);
-        // Reset to default insurance (or last valid selection)
-        const targetId = MOCK_INSURANCE[0]?.id || ""; // Fallback
+        const targetId = MOCK_INSURANCE[0]?.id || "";
         setSelectedInsuranceId(targetId);
         if (targetId) prefillInsuranceData(targetId);
    }
+
+  // --- CASCO Event Handlers ---
+  const handleCascoSelect = (value: string) => {
+    if (value === "new") {
+      setIsAddingNewCasco(true)
+      setIsEditingCasco(false)
+      setSelectedCascoId("")
+      setValue("vehicleA.casco.company", "")
+      setValue("vehicleA.casco.policyNumber", "")
+      setValue("vehicleA.casco.validTo", "")
+    } else if (value === "none") {
+      setSelectedCascoId("")
+      prefillCascoData("")
+      setIsAddingNewCasco(false)
+      setIsEditingCasco(false)
+    } else {
+      setSelectedCascoId(value)
+      prefillCascoData(value)
+      setIsAddingNewCasco(false)
+      setIsEditingCasco(false)
+    }
+  }
+
+  const handleCancelAddCasco = () => {
+    setIsAddingNewCasco(false);
+    const targetId = "";
+    setSelectedCascoId(targetId);
+    prefillCascoData(targetId);
+  }
 
   // --- Trailer Section ---
   const renderTrailerSection = () => (
@@ -223,7 +294,7 @@ export default function PartyADataStep() {
              <Button variant="ghost" size="sm" className="h-7 text-xs text-red-600 hover:text-red-700" onClick={handleCancelAddVehicle}>Anulează Adăugarea</Button>
           </div>
           {renderVehicleInputs()}
-          {renderTrailerSection()} {/* Add trailer section here too */}
+          {renderTrailerSection()}
         </>
       )
     }
@@ -255,17 +326,18 @@ export default function PartyADataStep() {
     return (
       <div className="space-y-1">
         <div className="flex justify-between items-start">
-          <div className="space-y-0.5 flex-1 mr-2"> {/* Added flex-1 and mr-2 */}
+          <div className="space-y-0.5 flex-1 mr-2">
              <ReadOnlyField label="Marcă" value={vehicleMake} />
              <ReadOnlyField label="Model" value={vehicleModel} />
              <ReadOnlyField label="Nr. Înmatriculare" value={vehiclePlate} />
-             <ReadOnlyField label="VIN" value={vehicleVin} /> {/* Display VIN */}
+             <ReadOnlyField label="VIN" value={vehicleVin} />
+             <ReadOnlyField label="Revizie Tehnică" value={vehicleTechInspection} />
           </div>
-          <Button variant="outline" size="sm" className="h-7 text-xs px-2 flex-shrink-0" onClick={() => setIsEditingVehicle(true)}> {/* Added flex-shrink-0 */}
+          <Button variant="outline" size="sm" className="h-7 text-xs px-2 flex-shrink-0" onClick={() => setIsEditingVehicle(true)}>
             <Edit2 className="h-3 w-3 mr-1" /> Schimbă
           </Button>
         </div>
-         {renderTrailerSection()} {/* Trailer section always visible in read-only mode */}
+         {renderTrailerSection()}
       </div>
     )
   }
@@ -309,13 +381,66 @@ export default function PartyADataStep() {
      return (
        <div className="space-y-1">
          <div className="flex justify-between items-start">
-            <div className="space-y-0.5 flex-1 mr-2"> {/* Added flex-1 and mr-2 */}
+            <div className="space-y-0.5 flex-1 mr-2">
               <ReadOnlyField label="Asigurător" value={insuranceCompany} />
               <ReadOnlyField label="Poliță Nr." value={insurancePolicy} />
               <ReadOnlyField label="Valabilă până la" value={insuranceValidTo} />
             </div>
-           <Button variant="outline" size="sm" className="h-7 text-xs px-2 flex-shrink-0" onClick={() => setIsEditingInsurance(true)}> {/* Added flex-shrink-0 */}
+           <Button variant="outline" size="sm" className="h-7 text-xs px-2 flex-shrink-0" onClick={() => setIsEditingInsurance(true)}>
              <Edit2 className="h-3 w-3 mr-1" /> Schimbă
+           </Button>
+         </div>
+       </div>
+     )
+   }
+
+   // --- CASCO Card Content ---
+   const renderCascoContent = () => {
+     if (isAddingNewCasco) {
+       return (
+         <>
+           <div className="flex justify-end mb-2 -mt-1">
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-red-600 hover:text-red-700" onClick={handleCancelAddCasco}>Anulează Adăugarea</Button>
+           </div>
+           {renderCascoInputs()}
+         </>
+       )
+     }
+
+     if (isEditingCasco) {
+       return (
+         <div className="space-y-1.5">
+           <Label className="text-sm text-gray-700">Selectează CASCO</Label>
+           <Select value={selectedCascoId} onValueChange={handleCascoSelect}>
+             <SelectTrigger className="border-gray-300 text-gray-900 text-sm h-9">
+               <SelectValue placeholder="Alege o poliță CASCO" />
+             </SelectTrigger>
+             <SelectContent>
+               <SelectItem value="none">Niciuna</SelectItem>
+               {MOCK_CASCO.map((casco) => (
+                 <SelectItem key={casco.id} value={casco.id}>
+                   {casco.name}
+                 </SelectItem>
+               ))}
+               <SelectItem value="new">Adaugă Poliță CASCO</SelectItem>
+             </SelectContent>
+           </Select>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setIsEditingCasco(false)}>Anulează</Button>
+         </div>
+       )
+     }
+
+     // Render compact read-only view
+     return (
+       <div className="space-y-1">
+         <div className="flex justify-between items-start">
+            <div className="space-y-0.5 flex-1 mr-2">
+              <ReadOnlyField label="Asigurător CASCO" value={cascoCompany} />
+              <ReadOnlyField label="Poliță Nr." value={cascoPolicy} />
+              <ReadOnlyField label="Valabilă până la" value={cascoValidTo} />
+            </div>
+           <Button variant="outline" size="sm" className="h-7 text-xs px-2 flex-shrink-0" onClick={() => setIsEditingCasco(true)}>
+             <Edit2 className="h-3 w-3 mr-1" /> {selectedCascoId ? 'Schimbă' : 'Adaugă'}
            </Button>
          </div>
        </div>
@@ -349,13 +474,13 @@ export default function PartyADataStep() {
     return (
       <div className="space-y-1">
           <div className="flex justify-between items-start">
-              <div className="space-y-0.5 flex-1 mr-2"> {/* Added flex-1 and mr-2 */}
+              <div className="space-y-0.5 flex-1 mr-2">
                   <ReadOnlyField label="Nume" value={`${driverFirstName || ''} ${driverLastName || ''}`.trim() || '-'} />
                   <ReadOnlyField label="IDNP" value={driverIdnp} />
                   <ReadOnlyField label="Telefon" value={driverPhone} />
                   <ReadOnlyField label="Permis Nr." value={driverLicenseNumber} />
               </div>
-              <Button variant="outline" size="sm" className="h-7 text-xs px-2 flex-shrink-0" onClick={() => setIsEditingDriver(true)}> {/* Added flex-shrink-0 */}
+              <Button variant="outline" size="sm" className="h-7 text-xs px-2 flex-shrink-0" onClick={() => setIsEditingDriver(true)}>
                   <Edit2 className="h-3 w-3 mr-1" /> Schimbă
               </Button>
           </div>
@@ -387,7 +512,10 @@ export default function PartyADataStep() {
           <Input id="vehicle-a-vin" {...register("vehicleA.vin")} placeholder="Ex: JT2BF22K1W0123456" className="border-gray-300 text-sm h-9" />
         </div>
       </div>
-      {/* Trailer section is now handled by renderTrailerSection */}
+      <div className="space-y-1 pt-1">
+          <Label htmlFor="vehicle-a-tech-inspection" className="text-sm text-gray-700">Revizia Tehnică Valabilă Până La</Label>
+          <Input id="vehicle-a-tech-inspection" type="date" {...register("vehicleA.techInspectionValidUntil")} className="border-gray-300 text-sm h-9" />
+       </div>
     </>
   )
 
@@ -420,6 +548,25 @@ export default function PartyADataStep() {
        <div className="space-y-1">
          <Label htmlFor="insurance-insured-address" className="text-sm text-gray-700">Adresă Asigurat</Label>
          <Input id="insurance-insured-address" {...register("vehicleA.insurance.insuredAddress")} placeholder="Ex: Str. Independenței 12, Chișinău" className="border-gray-300 text-sm h-9" />
+       </div>
+     </>
+   )
+
+   const renderCascoInputs = () => (
+     <>
+       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+         <div className="space-y-1">
+           <Label htmlFor="casco-company" className="text-sm text-gray-700">Asigurător CASCO</Label>
+           <Input id="casco-company" {...register("vehicleA.casco.company")} placeholder="Ex: GRAWE Carat" className="border-gray-300 text-sm h-9" />
+         </div>
+         <div className="space-y-1">
+           <Label htmlFor="casco-policy" className="text-sm text-gray-700">Poliță Nr.</Label>
+           <Input id="casco-policy" {...register("vehicleA.casco.policyNumber")} placeholder="Ex: C123" className="border-gray-300 text-sm h-9" />
+         </div>
+       </div>
+       <div className="space-y-1">
+         <Label htmlFor="casco-valid-to" className="text-sm text-gray-700">Valabilitate până la</Label>
+         <Input id="casco-valid-to" type="date" {...register("vehicleA.casco.validTo")} className="border-gray-300 text-sm h-9" />
        </div>
      </>
    )
@@ -477,11 +624,11 @@ export default function PartyADataStep() {
 
   // --- Main Component Return ---
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
       {/* Vehicle Card */}
-      <Card className="shadow-sm border-gray-200">
+      <Card className="shadow-sm border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
         <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-base text-gray-900">Vehiculul A (Dvs.)</CardTitle>
+          <CardTitle className="text-base font-semibold text-gray-900">Vehiculul A (Dvs.)</CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3 pt-2 space-y-3">
           {renderVehicleContent()}
@@ -489,22 +636,32 @@ export default function PartyADataStep() {
       </Card>
 
       {/* Insurance Card */}
-      <Card className="shadow-sm border-gray-200">
+      <Card className="shadow-sm border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
         <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-base text-gray-900">Asigurarea RCA</CardTitle>
+          <CardTitle className="text-base font-semibold text-gray-900">Asigurarea RCA</CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3 pt-2 space-y-3">
            {renderInsuranceContent()}
         </CardContent>
       </Card>
 
-      {/* Driver Card */}
-      <Card className="shadow-sm border-gray-200">
+      {/* CASCO Card */}
+      <Card className="shadow-sm border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
         <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-base text-gray-900">Șoferul A (Dvs.)</CardTitle>
+          <CardTitle className="text-base font-semibold text-gray-900">Asigurare CASCO (Opțional)</CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3 pt-2 space-y-3">
-           {renderDriverContent()} {/* Use the new conditional renderer */}
+           {renderCascoContent()}
+        </CardContent>
+      </Card>
+
+      {/* Driver Card */}
+      <Card className="shadow-sm border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
+        <CardHeader className="pb-2 pt-3 px-3">
+          <CardTitle className="text-base font-semibold text-gray-900">Șoferul A (Dvs.)</CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 pb-3 pt-2 space-y-3">
+           {renderDriverContent()}
         </CardContent>
       </Card>
     </div>

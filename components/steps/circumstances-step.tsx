@@ -33,10 +33,10 @@ export default function CircumstancesStep() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
       <div className="space-y-6 sm:space-y-8">
-        <div className="space-y-4 sm:space-y-6">
-          <h3 className="text-base sm:text-lg font-medium text-gray-900">
+        <div className="space-y-4 sm:space-y-6 p-4 rounded-lg border border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
             Circumstanțele Accidentului - Vehiculul A (Dvs.)
           </h3>
 
@@ -62,7 +62,7 @@ export default function CircumstancesStep() {
           </div>
 
           {vehicleAStatus === "stationary" && (
-            <div className="space-y-4 pl-6 border-l-2 border-gray-200">
+            <div className="space-y-4 p-3 rounded-md border-l-2 border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
               <Label>Cum era poziționat vehiculul Dvs.?</Label>
               <RadioGroup
                 value={vehicleAAction}
@@ -92,7 +92,7 @@ export default function CircumstancesStep() {
           )}
 
           {vehicleAStatus === "moving" && (
-            <div className="space-y-4 pl-6 border-l-2 border-gray-200">
+            <div className="space-y-4 p-3 rounded-md border-l-2 border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
               <Label>Ce acțiune principală efectuați?</Label>
               <Select
                 value={vehicleAAction}
@@ -115,8 +115,8 @@ export default function CircumstancesStep() {
           )}
         </div>
 
-        <div className="space-y-4 sm:space-y-6">
-          <h3 className="text-base sm:text-lg font-medium text-gray-900">Circumstanțele Accidentului - Vehiculul B</h3>
+        <div className="space-y-4 sm:space-y-6 p-4 rounded-lg border border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">Circumstanțele Accidentului - Vehiculul B</h3>
 
           <div className="space-y-4">
             <Label>Cum se deplasa vehiculul B în momentul impactului?</Label>
@@ -140,7 +140,7 @@ export default function CircumstancesStep() {
           </div>
 
           {vehicleBStatus === "stationary" && (
-            <div className="space-y-4 pl-6 border-l-2 border-gray-200">
+            <div className="space-y-4 p-3 rounded-md border-l-2 border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
               <Label>Cum era poziționat vehiculul B?</Label>
               <RadioGroup
                 value={vehicleBAction}
@@ -170,7 +170,7 @@ export default function CircumstancesStep() {
           )}
 
           {vehicleBStatus === "moving" && (
-            <div className="space-y-4 pl-6 border-l-2 border-gray-200">
+            <div className="space-y-4 p-3 rounded-md border-l-2 border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
               <Label>Ce acțiune principală efectua?</Label>
               <Select
                 value={vehicleBAction}
@@ -191,37 +191,6 @@ export default function CircumstancesStep() {
               </Select>
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Label>Condiții de drum</Label>
-        <Select onValueChange={handleAddCondition}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selectați condițiile de drum" />
-          </SelectTrigger>
-          <SelectContent>
-            {ROAD_CONDITIONS.map((condition) => (
-              <SelectItem key={condition} value={condition}>
-                {condition}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="flex flex-wrap gap-2 mt-2">
-          {selectedConditions.map((condition) => (
-            <Badge key={condition} variant="secondary" className="flex items-center gap-1 bg-gray-100 text-gray-700">
-              {condition}
-              <button
-                type="button"
-                onClick={() => handleRemoveCondition(condition)}
-                className="ml-1 hover:text-red-500"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
         </div>
       </div>
     </div>

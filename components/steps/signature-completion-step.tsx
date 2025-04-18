@@ -64,9 +64,9 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
 
     if (showJson) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-4 p-4 rounded-lg" style={{ backgroundColor: '#E8F1F1' }}>
           <h3 className="text-lg font-medium text-gray-900">Date Simulate Trimise către EVO (JSON)</h3>
-          <Card className="p-4 border-gray-200 shadow-sm max-h-[500px] overflow-auto">
+          <Card className="p-4 border-gray-200 shadow-sm max-h-[500px] overflow-auto bg-white">
             <pre className="text-sm text-gray-700 whitespace-pre-wrap break-words">
               {jsonData}
             </pre>
@@ -79,7 +79,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
     }
 
     return (
-      <div className="space-y-6 text-center">
+      <div className="space-y-6 text-center p-4 rounded-lg" style={{ backgroundColor: '#E8F1F1' }}>
         <CheckCircle2 className="h-12 w-12 sm:h-16 sm:w-16 text-green-600 mx-auto" />
 
         <div className="space-y-2">
@@ -127,7 +127,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
 
   if (isSubmitting) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+      <div className="flex flex-col items-center justify-center py-8 sm:py-12 p-4 rounded-lg" style={{ backgroundColor: '#FEF5DD' }}>
         <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 text-blue-sky-600 animate-spin mb-4" />
         <h3 className="text-base sm:text-lg font-medium text-gray-900">Se finalizează constatarea...</h3>
         <p className="text-gray-700 mt-2 text-sm sm:text-base">
@@ -138,16 +138,16 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
       <div className="space-y-3 sm:space-y-4">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900">Semnături Digitale</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900">Semnături Digitale</h3>
         <p className="text-gray-700 text-sm sm:text-base">
           Pentru finalizarea constatării amiabile, ambii șoferi trebuie să semneze digital folosind EVO Sign.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <Card className="p-3 sm:p-4 shadow-sm border-gray-200">
+        <Card className="p-3 sm:p-4 shadow-sm border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
           <div className="space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-medium text-gray-900">Semnătură Șofer A</h4>
@@ -163,7 +163,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
             )}
 
             {signatureA ? (
-              <div className="border rounded-lg p-2 bg-white">
+              <div className="border rounded-lg p-2" style={{ backgroundColor: '#EBF7F1' }}>
                 <div className="flex items-center justify-center py-6 gap-2">
                   <CheckCircle2 className="h-6 w-6 text-green-600" />
                   <span className="text-green-600 font-medium">Semnat digital via EVO Sign</span>
@@ -185,6 +185,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
                   onClick={handleSignA}
                   className="border border-gray-300 rounded-md p-1 hover:border-blue-sky-500 focus:outline-none focus:ring-2 focus:ring-blue-sky-500 focus:ring-offset-2 transition-all"
                   aria-label="Semnează Digital pentru Șofer A"
+                  style={{ backgroundColor: 'white' }}
                 >
                   <img src="/msign.png" alt="Sign Button" className="h-16 w-32 object-contain" />
                 </button>
@@ -193,7 +194,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
           </div>
         </Card>
 
-        <Card className="p-3 sm:p-4 shadow-sm border-gray-200">
+        <Card className="p-3 sm:p-4 shadow-sm border-gray-200" style={{ backgroundColor: '#D6E5F8' }}>
           <div className="space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-medium text-gray-900">Semnătură Șofer B</h4>
@@ -209,7 +210,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
             )}
 
             {signatureB ? (
-              <div className="border rounded-lg p-2 bg-white">
+              <div className="border rounded-lg p-2" style={{ backgroundColor: '#EBF7F1' }}>
                 <div className="flex items-center justify-center py-6 gap-2">
                   <CheckCircle2 className="h-6 w-6 text-green-600" />
                   <span className="text-green-600 font-medium">Semnat digital via EVO Sign</span>
@@ -231,6 +232,7 @@ export default function SignatureCompletionStep({ isSubmitting, isCompleted, onS
                    onClick={handleSignB}
                    className="border border-gray-300 rounded-md p-1 hover:border-blue-sky-500 focus:outline-none focus:ring-2 focus:ring-blue-sky-500 focus:ring-offset-2 transition-all"
                    aria-label="Semnează Digital pentru Șofer B"
+                   style={{ backgroundColor: 'white' }}
                  >
                    <img src="/msign.png" alt="Sign Button" className="h-16 w-32 object-contain" />
                  </button>

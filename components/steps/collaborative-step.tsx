@@ -23,9 +23,9 @@ export default function CollaborativeStep({ isPartyBConfirmed, onPartyBConfirm }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
       <div className="space-y-2">
-        <h3 className="text-lg font-medium">Sesiune Colaborativă</h3>
+        <h3 className="text-lg font-semibold">Sesiune Colaborativă</h3>
         <p className="text-gray-600">
           Pentru a completa constatarea amiabilă digital, ambii șoferi trebuie să confirme participarea.
         </p>
@@ -51,16 +51,18 @@ export default function CollaborativeStep({ isPartyBConfirmed, onPartyBConfirm }
         </div>
 
         <div className="text-center">
-          <p className="text-sm text-gray-500 mb-2">sau</p>
-          <Button
-            variant="outline"
-            onClick={handlePartyBConfirm}
-            disabled={isLoading || isPartyBConfirmed}
-            className="flex items-center gap-2 text-gray-700"
-          >
-            <Smartphone className="h-4 w-4" />
-            Șoferul B Confirmă pe Acest Dispozitiv
-          </Button>
+          <p className="text-lg font-bold text-gray-600 mb-2">sau</p>
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={handlePartyBConfirm}
+              disabled={isLoading || isPartyBConfirmed}
+              className="flex items-center gap-2 text-gray-700"
+            >
+              <Smartphone className="h-4 w-4" />
+              Confirmă Aici
+            </Button>
+          </div>
         </div>
 
         {!isPartyBConfirmed && !isLoading && (

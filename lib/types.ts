@@ -61,6 +61,7 @@ export interface Vehicle {
   hasTrailer: boolean
   trailerPlate: string
   trailerVin: string
+  techInspectionValidUntil?: string
   insurance: {
     company: string
     policyNumber: string
@@ -68,6 +69,11 @@ export interface Vehicle {
     validTo: string
     insuredName: string
     insuredAddress: string
+  }
+  casco?: {
+    company?: string
+    policyNumber?: string
+    validTo?: string
   }
 }
 

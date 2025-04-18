@@ -6,6 +6,16 @@ import { AlertTriangle } from "lucide-react"
 import { useFormContext } from "react-hook-form"
 import type { AccidentFormData } from "@/lib/types"
 
+// Helper function to format YYYY-MM-DD to DD.MM.YYYY
+const formatDate = (dateStr: string | undefined | null): string => {
+  if (!dateStr || !/\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr || "-";
+  try {
+    return dateStr.split('-').reverse().join('.');
+  } catch (e) {
+    return dateStr; // Return original if format fails
+  }
+};
+
 export default function ReviewStep() {
   const { getValues } = useFormContext<AccidentFormData>()
 
@@ -33,7 +43,7 @@ export default function ReviewStep() {
             <div className="space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Data:</span>
-                <span>{getValues("dateTime.date")}</span>
+                <span>{formatDate(getValues("dateTime.date"))}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Ora:</span>
@@ -129,6 +139,7 @@ export default function ReviewStep() {
                 <p>Model: {getValues("vehicleA.model")}</p>
                 <p>Nr. înmatriculare: {getValues("vehicleA.plateNumber")}</p>
                 <p>VIN: {getValues("vehicleA.vin")}</p>
+                <p>Revizie Tehnică: {formatDate(getValues("vehicleA.techInspectionValidUntil"))}</p>
                 {getValues("vehicleA.hasTrailer") && (
                   <>
                     <p className="mt-2 font-medium">Remorcă:</p>
@@ -142,11 +153,39 @@ export default function ReviewStep() {
                 <p className="font-medium">Asigurare:</p>
                 <p>Asigurător: {getValues("vehicleA.insurance.company")}</p>
                 <p>Poliță Nr.: {getValues("vehicleA.insurance.policyNumber")}</p>
-                <p>Valabilă de la: {getValues("vehicleA.insurance.validFrom")}</p>
-                <p>Valabilă până la: {getValues("vehicleA.insurance.validTo")}</p>
+                <p>Valabilă de la: {formatDate(getValues("vehicleA.insurance.validFrom"))}</p>
+                <p>Valabilă până la: {formatDate(getValues("vehicleA.insurance.validTo"))}</p>
                 <p>Asigurat: {getValues("vehicleA.insurance.insuredName")}</p>
                 <p>Adresă: {getValues("vehicleA.insurance.insuredAddress")}</p>
               </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="casco-a" className="border-gray-200">
+          <AccordionTrigger className="text-sm py-3 text-gray-900 hover:text-gray-900 hover:no-underline">
+            Asigurare CASCO A (Opțional)
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2 text-xs sm:text-sm">
+              {getValues("vehicleA.casco.policyNumber") ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Asigurător:</span>
+                    <span>{getValues("vehicleA.casco.company") || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Poliță Nr.:</span>
+                    <span>{getValues("vehicleA.casco.policyNumber") || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Valabilă până la:</span>
+                    <span>{formatDate(getValues("vehicleA.casco.validTo"))}</span>
+                  </div>
+                </>
+              ) : (
+                <p>Nu a fost adăugată asigurare CASCO.</p>
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -170,8 +209,8 @@ export default function ReviewStep() {
                 <p className="font-medium">Permis de conducere:</p>
                 <p>Număr: {getValues("driverA.license.number")}</p>
                 <p>Categorii: {getValues("driverA.license.categories")}</p>
-                <p>Data emiterii: {getValues("driverA.license.issueDate")}</p>
-                <p>Data expirării: {getValues("driverA.license.expiryDate")}</p>
+                <p>Data emiterii: {formatDate(getValues("driverA.license.issueDate"))}</p>
+                <p>Data expirării: {formatDate(getValues("driverA.license.expiryDate"))}</p>
               </div>
             </div>
           </AccordionContent>
@@ -189,6 +228,7 @@ export default function ReviewStep() {
                 <p>Model: {getValues("vehicleB.model")}</p>
                 <p>Nr. înmatriculare: {getValues("vehicleB.plateNumber")}</p>
                 <p>VIN: {getValues("vehicleB.vin")}</p>
+                <p>Revizie Tehnică: {formatDate(getValues("vehicleB.techInspectionValidUntil"))}</p>
                 {getValues("vehicleB.hasTrailer") && (
                   <>
                     <p className="mt-2 font-medium">Remorcă:</p>
@@ -202,8 +242,8 @@ export default function ReviewStep() {
                 <p className="font-medium">Asigurare:</p>
                 <p>Asigurător: {getValues("vehicleB.insurance.company")}</p>
                 <p>Poliță Nr.: {getValues("vehicleB.insurance.policyNumber")}</p>
-                <p>Valabilă de la: {getValues("vehicleB.insurance.validFrom")}</p>
-                <p>Valabilă până la: {getValues("vehicleB.insurance.validTo")}</p>
+                <p>Valabilă de la: {formatDate(getValues("vehicleB.insurance.validFrom"))}</p>
+                <p>Valabilă până la: {formatDate(getValues("vehicleB.insurance.validTo"))}</p>
                 <p>Asigurat: {getValues("vehicleB.insurance.insuredName")}</p>
                 <p>Adresă: {getValues("vehicleB.insurance.insuredAddress")}</p>
               </div>
@@ -230,8 +270,8 @@ export default function ReviewStep() {
                 <p className="font-medium">Permis de conducere:</p>
                 <p>Număr: {getValues("driverB.license.number")}</p>
                 <p>Categorii: {getValues("driverB.license.categories")}</p>
-                <p>Data emiterii: {getValues("driverB.license.issueDate")}</p>
-                <p>Data expirării: {getValues("driverB.license.expiryDate")}</p>
+                <p>Data emiterii: {formatDate(getValues("driverB.license.issueDate"))}</p>
+                <p>Data expirării: {formatDate(getValues("driverB.license.expiryDate"))}</p>
               </div>
             </div>
           </AccordionContent>

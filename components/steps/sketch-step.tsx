@@ -10,8 +10,8 @@ import { Pencil, Type, Trash2, Save, Car, Undo, Redo, ArrowRight } from "lucide-
 const MIN_CAR_SCALE = 0.3;
 const MAX_CAR_SCALE = 3.0;
 const SELECTION_PADDING = 5; // Visual padding for selection box
-const HANDLE_SIZE = 8; // Visual size of the rotation/scale handle
-const ROTATION_HANDLE_VISUAL_OFFSET = 15; // How far the handle appears from the car's edge
+const HANDLE_SIZE = 16; // Further increased handle size
+const ROTATION_HANDLE_VISUAL_OFFSET = 20; // Adjusted offset for larger handle
 const LIGHT_RADIUS = 1.5; // Radius for headlights/taillights
 const LIGHT_OFFSET = 3; // How far lights are inset from corners
 const ARROW_COLOR = "#FFD700"; // Yellow for arrows
@@ -465,31 +465,31 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
         ctx.strokeStyle = "#ffffff"; // White border
         ctx.lineWidth = 1;
         ctx.stroke();
+
+        // Draw Rotation Icon inside handle
+        ctx.save();
+        ctx.translate(handlePos.x, handlePos.y);
+        ctx.scale(HANDLE_SIZE / 16, HANDLE_SIZE / 16); // Scale icon based on handle size (base size 16)
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5 / (HANDLE_SIZE / 16); // Adjust line width for scale
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, -Math.PI * 0.8, Math.PI * 0.8); // Draw arc
+        // Arrowhead for the arc
+        const arrowAngle = Math.PI * 0.8;
+        const arrowEndX = 5 * Math.cos(arrowAngle);
+        const arrowEndY = 5 * Math.sin(arrowAngle);
+        ctx.moveTo(arrowEndX, arrowEndY);
+        ctx.lineTo(arrowEndX - 3 * Math.cos(arrowAngle - Math.PI / 6), arrowEndY - 3 * Math.sin(arrowAngle - Math.PI / 6));
+        ctx.moveTo(arrowEndX, arrowEndY);
+        ctx.lineTo(arrowEndX - 3 * Math.cos(arrowAngle + Math.PI / 6), arrowEndY - 3 * Math.sin(arrowAngle + Math.PI / 6));
+        ctx.stroke();
+        ctx.restore();
+
         ctx.setLineDash([]); // Reset dash pattern
       }
     }
   }
 
-
-  // --- Canvas Setup Effect ---
-  useEffect(() => {
-    if (showEditor && canvasRef.current) {
-      const canvas = canvasRef.current
-      // Set canvas resolution
-      canvas.width = canvas.offsetWidth * 2
-      canvas.height = canvas.offsetHeight * 2
-      const context = canvas.getContext("2d")
-      if (context) {
-        context.scale(2, 2) // Scale context for drawing
-        context.lineCap = "round"
-        contextRef.current = context
-        // Initial draw when context is ready and background status known
-        if (isBgLoaded) {
-             drawAllElements()
-        }
-      }
-    }
-  }, [showEditor, isBgLoaded, drawAllElements]) // Add isBgLoaded and drawAllElements
 
   // --- Redraw Effect ---
   useEffect(() => {
@@ -502,7 +502,7 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
 
   // --- Interaction Handlers ---
 
-  const handleInteractionStart = (event: React.MouseEvent | React.TouchEvent) => {
+  const handleInteractionStart = useCallback((event: React.MouseEvent | React.TouchEvent) => {
     if ('touches' in event && event.touches.length > 1) return; // Ignore multi-touch for now
     if ('button' in event && event.button !== 0) return; // Ignore right-clicks etc.
 
@@ -554,13 +554,22 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
         setSelectedElementId(null); // Deselect if background clicked
 
         if (selectedTool === "carA" || selectedTool === "carB") {
-            const newCar: DrawnElement = {
-                id: generateId(), type: "car", position: pos,
-                carType: selectedTool === "carA" ? "A" : "B", rotation: 0, scale: 1,
-            };
-            setDrawnElements(prev => [...prev, newCar]);
-            setSelectedElementId(newCar.id); // Select new car
-            // Optionally switch back to select/pencil tool
+            const carTypeToAdd = selectedTool === "carA" ? "A" : "B";
+            // Check if a car of this type already exists
+            const carExists = drawnElements.some(el => el.type === 'car' && el.carType === carTypeToAdd);
+            
+            if (!carExists) { // Only add if it doesn't exist
+                const newCar: DrawnElement = {
+                    id: generateId(), type: "car", position: pos,
+                    carType: carTypeToAdd, rotation: 0, scale: 1.5, 
+                };
+                setDrawnElements(prev => [...prev, newCar]);
+                setSelectedElementId(newCar.id); // Select new car
+            } else {
+                console.log(`Car type ${carTypeToAdd} already exists.`); // Optional feedback
+                // Optionally show a user alert here
+            }
+             // Optionally switch back to select/pencil tool regardless
             // setSelectedTool("pencil");
         } else if (selectedTool === "text") {
             const text = prompt("Introduceți textul:");
@@ -588,19 +597,20 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
     }
 
     // Prevent default touch behavior like scrolling
-    if ('touches' in event) event.preventDefault();
+    // This might cause issues if called within a potentially passive listener
+    // if ('touches' in event) event.preventDefault(); 
+    // Instead, preventDefault is called in the manually attached listener
 
     setInteraction(interactionStarted); // Set the determined interaction state
-  }
+  }, [selectedElementId, drawnElements, selectedTool, getEventPos, isPointOnRotationHandle, isPointInCarBody, distance]); // Added dependencies
 
-
-  const handleInteractionMove = (event: React.MouseEvent | React.TouchEvent) => {
+  const handleInteractionMove = useCallback((event: React.MouseEvent | React.TouchEvent) => {
     if ('touches' in event && event.touches.length > 1) return; // Ignore multi-touch
 
     const pos = getEventPos(event);
 
-    // Prevent default touch behavior like scrolling
-    if ('touches' in event) event.preventDefault();
+    // Prevent default touch behavior like scrolling - handled in manual listener
+    // if ('touches' in event) event.preventDefault();
 
     // Handle dragging, rotating, scaling (existing logic)
     if (interaction.state === "dragging" || interaction.state === "rotating_scaling") {
@@ -616,7 +626,7 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
                         y: pos.y - interaction.dragOffsetY,
                     };
                 } else if (interaction.state === "rotating_scaling" && updatedElement.type === 'car' && updatedElement.position &&
-                           interaction.initialDistance !== undefined && interaction.initialScale !== undefined && interaction.initialRotation !== undefined)
+                    interaction.initialDistance !== undefined && interaction.initialScale !== undefined && interaction.initialRotation !== undefined)
                 {
                     // --- Rotation ---
                     const dx = pos.x - updatedElement.position.x;
@@ -644,16 +654,15 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
         );
     }
 
-     // Update arrow drawing end point
+    // Update arrow drawing end point
     if (interaction.state === 'drawing_arrow') {
         setInteraction(prev => ({ ...prev, currentArrowEndPoint: pos }));
     }
-  }
+  }, [interaction, getEventPos, distance]); // Added dependencies
 
-
-  const handleInteractionEnd = () => {
-     // Finalize arrow drawing
-     if (interaction.state === 'drawing_arrow' && interaction.arrowStartPoint && interaction.currentArrowEndPoint && distance(interaction.arrowStartPoint, interaction.currentArrowEndPoint) > 5) { // Avoid tiny arrows from clicks
+  const handleInteractionEnd = useCallback(() => {
+    // Finalize arrow drawing
+    if (interaction.state === 'drawing_arrow' && interaction.arrowStartPoint && interaction.currentArrowEndPoint && distance(interaction.arrowStartPoint, interaction.currentArrowEndPoint) > 5) { // Avoid tiny arrows from clicks
         const newArrow: DrawnElement = {
             id: generateId(),
             type: 'arrow',
@@ -666,9 +675,62 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
 
     // Reset interaction state regardless of type
     if (interaction.state !== 'none') {
-      setInteraction({ state: "none" });
+        setInteraction({ state: "none" });
     }
-  }
+  }, [interaction, distance]); // Added dependency
+
+  // --- Canvas Setup and Event Listener Effect ---
+  useEffect(() => {
+    if (!showEditor || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    // Set canvas resolution
+    canvas.width = canvas.offsetWidth * 2;
+    canvas.height = canvas.offsetHeight * 2;
+    const context = canvas.getContext("2d");
+
+    if (context) {
+      context.scale(2, 2); // Scale context for drawing
+      context.lineCap = "round";
+      contextRef.current = context;
+      // Initial draw when context is ready and background status known
+      if (isBgLoaded) {
+        drawAllElements();
+      }
+    }
+
+    // --- Manual Event Listeners --- 
+    // Wrap handlers in simple functions to avoid complex type issues if needed
+    const handleStart = (e: TouchEvent) => {
+        e.preventDefault(); 
+        handleInteractionStart(e as unknown as React.TouchEvent<HTMLCanvasElement>); 
+    };
+    const handleMove = (e: TouchEvent) => {
+        e.preventDefault(); 
+        handleInteractionMove(e as unknown as React.TouchEvent<HTMLCanvasElement>);
+    };
+    const handleEnd = (e: TouchEvent) => {
+        handleInteractionEnd();
+    };
+
+    // Attach touch listeners manually with passive: false
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    canvas.addEventListener('touchmove', handleMove, { passive: false });
+    canvas.addEventListener('touchend', handleEnd, { passive: true }); // end/cancel can be passive
+    canvas.addEventListener('touchcancel', handleEnd, { passive: true });
+
+    // Cleanup function
+    return () => {
+      if (canvas) {
+          canvas.removeEventListener('touchstart', handleStart);
+          canvas.removeEventListener('touchmove', handleMove);
+          canvas.removeEventListener('touchend', handleEnd);
+          canvas.removeEventListener('touchcancel', handleEnd);
+      }
+    };
+
+    // Dependencies: Include stable handler references
+  }, [showEditor, isBgLoaded, drawAllElements, handleInteractionStart, handleInteractionMove, handleInteractionEnd]);
 
 
   // --- Other Actions ---
@@ -740,124 +802,131 @@ export default function SketchStep({ data, updateData, onContinue, onBack }: Ske
 
   // --- Render ---
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold">Schița Accidentului</h2>
-
-      {!showEditor ? (
-        // Show saved image or button to start
-        <div className="space-y-4">
-          {sketchImage ? (
-            <div className="space-y-3">
-              <div className="border rounded-md overflow-hidden">
-                <img src={sketchImage} alt="Schiță accident" className="w-full object-contain" />
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" className="flex-1" onClick={() => setShowEditor(true)}>
-                  Editează Schița
-                </Button>
-              </div>
+    <div className="space-y-6 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold">Schița Accidentului</h3>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 w-full">
+          {!showEditor ? (
+            // Show saved image or button to start
+            <div className="space-y-4">
+              {sketchImage ? (
+                <div className="space-y-3">
+                  <div className="border rounded-md overflow-hidden">
+                    <img src={sketchImage} alt="Schiță accident" className="w-full object-contain" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" className="flex-1" onClick={() => setShowEditor(true)}>
+                      Editează Schița
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center py-4">
+                  <Button 
+                    type="button" 
+                    className="py-8 flex flex-col items-center gap-2 bg-[#3379DB] hover:bg-[#2860b0] text-white px-10"
+                    onClick={() => setShowEditor(true)}
+                  >
+                    <Pencil className="h-6 w-6" /> <span>Desenează Schița</span>
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
-            <Button type="button" className="w-full py-8 flex flex-col items-center gap-2 bg-[#0066CC] hover:bg-[#0052a3] text-white" onClick={() => setShowEditor(true)}>
-              <Pencil className="h-6 w-6" /> <span>Desenează Schița</span>
-            </Button>
+            // Show Editor
+            <Card style={{ backgroundColor: '#D6E5F8' }}>
+              <CardContent className="p-4 space-y-4">
+                {/* Toolbar */}
+                <div className="flex gap-2 overflow-x-auto pb-2 flex-wrap justify-center">
+                  {/* Select/Move/Draw Tool (using Pencil Icon for now) */}
+                  <Button type="button" size="sm"
+                    variant={selectedTool === "pencil" ? "default" : "outline"}
+                    onClick={() => setSelectedTool("pencil")}
+                    className={selectedTool === "pencil" ? "bg-[#0066CC] hover:bg-[#0052a3] text-white" : "border-gray-300 text-gray-700"}
+                    title="Selectează / Mută / Rotește" >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  {/* Arrow Tool */}
+                  <Button type="button" size="sm"
+                    variant={selectedTool === "arrow" ? "default" : "outline"}
+                    onClick={() => setSelectedTool("arrow")}
+                    className={selectedTool === "arrow" ? "bg-[#FFD700] hover:bg-[#f0c400] text-black" : "border-gray-300 text-gray-700"}
+                    title="Desenează Săgeată" >
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                  {/* Text Tool */}
+                  <Button type="button" size="sm"
+                    variant={selectedTool === "text" ? "default" : "outline"}
+                    onClick={() => setSelectedTool("text")}
+                    className={selectedTool === "text" ? "bg-[#0066CC] hover:bg-[#0052a3] text-white" : "border-gray-300 text-gray-700"}
+                    title="Adaugă Text" >
+                    <Type className="h-4 w-4" />
+                  </Button>
+                  {/* Undo/Redo */}
+                  <Button type="button" size="sm" variant="outline" onClick={handleUndo} className="border-gray-300 text-gray-700" title="Anulează"><Undo className="h-4 w-4" /></Button>
+                  <Button type="button" size="sm" variant="outline" onClick={handleRedo} className="border-gray-300 text-gray-700" title="Refă (N/A)"><Redo className="h-4 w-4" /></Button>
+                  <div className="border-l mx-1 h-6 self-center"></div>
+                  {/* Car Tools */}
+                  <Button type="button" size="sm"
+                    variant={selectedTool === "carA" ? "default" : "outline"}
+                    onClick={() => setSelectedTool("carA")}
+                    className={`flex items-center gap-1 ${selectedTool === "carA" ? "bg-[#0066CC] hover:bg-[#0052a3] text-white" : "border-gray-300 text-gray-700"}`}
+                    title="Adaugă Vehicul A" >
+                    <Car className="h-4 w-4" /> <span>Vehicul A</span>
+                  </Button>
+                  <Button type="button" size="sm"
+                    variant={selectedTool === "carB" ? "default" : "outline"}
+                    onClick={() => setSelectedTool("carB")}
+                    className={`flex items-center gap-1 ${selectedTool === "carB" ? "bg-red-500 hover:bg-red-600 text-white" : "border-gray-300 text-gray-700"}`}
+                    title="Adaugă Vehicul B" >
+                    <Car className="h-4 w-4" /> <span>Vehicul B</span>
+                  </Button>
+                  {/* Clear */}
+                  <Button type="button" size="sm" variant="outline" onClick={clearCanvas} className="ml-auto border-gray-300 text-red-500 hover:bg-red-50" title="Șterge Tot">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Canvas Area */}
+                <div className="border rounded-md overflow-hidden bg-gray-50 relative select-none" style={{height: '500px'}}> {/* Increased height */}
+                  <canvas
+                    ref={canvasRef}
+                    onMouseDown={handleInteractionStart}
+                    onMouseMove={handleInteractionMove}
+                    onMouseUp={handleInteractionEnd}
+                    onMouseLeave={handleInteractionEnd} // End interaction if mouse leaves canvas
+                    className="w-full h-full block" // Ensure canvas fills container
+                    style={{
+                      touchAction: "none", // Prevent scrolling/zooming on touch devices
+                      cursor: getCursorStyle(), // Dynamic cursor
+                      // Background image is drawn onto the canvas, not set via CSS
+                    }}
+                  />
+                   {!isBgLoaded && !backgroundImage && showEditor && (
+                       <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-gray-100">
+                           Loading background...
+                       </div>
+                   )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowEditor(false)} className="flex-1"> Anulează </Button>
+                  <Button type="button" onClick={saveSketch} className="flex-1 gap-1 bg-blue-sky-600 hover:bg-blue-sky-700 text-white"> <Save className="h-4 w-4" /> Salvează Schița </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </div>
-      ) : (
-        // Show Editor
-        <Card>
-          <CardContent className="p-4 space-y-4">
-            {/* Toolbar */}
-            <div className="flex gap-2 overflow-x-auto pb-2 flex-wrap">
-              {/* Select/Move/Draw Tool (using Pencil Icon for now) */}
-              <Button type="button" size="sm"
-                variant={selectedTool === "pencil" ? "default" : "outline"}
-                onClick={() => setSelectedTool("pencil")}
-                className={selectedTool === "pencil" ? "bg-[#0066CC] hover:bg-[#0052a3] text-white" : "border-gray-300 text-gray-700"}
-                title="Selectează / Mută / Rotește" >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              {/* Arrow Tool */}
-              <Button type="button" size="sm"
-                variant={selectedTool === "arrow" ? "default" : "outline"}
-                onClick={() => setSelectedTool("arrow")}
-                className={selectedTool === "arrow" ? "bg-[#FFD700] hover:bg-[#f0c400] text-black" : "border-gray-300 text-gray-700"}
-                title="Desenează Săgeată" >
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              {/* Text Tool */}
-              <Button type="button" size="sm"
-                variant={selectedTool === "text" ? "default" : "outline"}
-                onClick={() => setSelectedTool("text")}
-                className={selectedTool === "text" ? "bg-[#0066CC] hover:bg-[#0052a3] text-white" : "border-gray-300 text-gray-700"}
-                title="Adaugă Text" >
-                <Type className="h-4 w-4" />
-              </Button>
-              {/* Undo/Redo */}
-              <Button type="button" size="sm" variant="outline" onClick={handleUndo} className="border-gray-300 text-gray-700" title="Anulează"><Undo className="h-4 w-4" /></Button>
-              <Button type="button" size="sm" variant="outline" onClick={handleRedo} className="border-gray-300 text-gray-700" title="Refă (N/A)"><Redo className="h-4 w-4" /></Button>
-              <div className="border-l mx-1 h-6 self-center"></div>
-              {/* Car Tools */}
-              <Button type="button" size="sm"
-                variant={selectedTool === "carA" ? "default" : "outline"}
-                onClick={() => setSelectedTool("carA")}
-                className={`flex items-center gap-1 ${selectedTool === "carA" ? "bg-[#0066CC] hover:bg-[#0052a3] text-white" : "border-gray-300 text-gray-700"}`}
-                title="Adaugă Vehicul A" >
-                <Car className="h-4 w-4" /> <span>Vehicul A</span>
-              </Button>
-              <Button type="button" size="sm"
-                variant={selectedTool === "carB" ? "default" : "outline"}
-                onClick={() => setSelectedTool("carB")}
-                className={`flex items-center gap-1 ${selectedTool === "carB" ? "bg-red-500 hover:bg-red-600 text-white" : "border-gray-300 text-gray-700"}`}
-                title="Adaugă Vehicul B" >
-                <Car className="h-4 w-4" /> <span>Vehicul B</span>
-              </Button>
-              {/* Clear */}
-              <Button type="button" size="sm" variant="outline" onClick={clearCanvas} className="ml-auto border-gray-300 text-red-500 hover:bg-red-50" title="Șterge Tot">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
 
-            {/* Canvas Area */}
-            <div className="border rounded-md overflow-hidden bg-gray-50 relative select-none" style={{height: '500px'}}> {/* Increased height */}
-              <canvas
-                ref={canvasRef}
-                onMouseDown={handleInteractionStart}
-                onMouseMove={handleInteractionMove}
-                onMouseUp={handleInteractionEnd}
-                onMouseLeave={handleInteractionEnd} // End interaction if mouse leaves canvas
-                onTouchStart={handleInteractionStart}
-                onTouchMove={handleInteractionMove}
-                onTouchEnd={handleInteractionEnd}
-                onTouchCancel={handleInteractionEnd} // End interaction if touch is cancelled
-                className="w-full h-full block" // Ensure canvas fills container
-                style={{
-                  touchAction: "none", // Prevent scrolling/zooming on touch devices
-                  cursor: getCursorStyle(), // Dynamic cursor
-                  // Background image is drawn onto the canvas, not set via CSS
-                }}
-              />
-               {!isBgLoaded && !backgroundImage && showEditor && (
-                   <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-gray-100">
-                       Loading background...
-                   </div>
-               )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => setShowEditor(false)} className="flex-1"> Anulează </Button>
-              <Button type="button" onClick={saveSketch} className="flex-1 gap-1 bg-[#0066CC] hover:bg-[#0052a3] text-white"> <Save className="h-4 w-4" /> Salvează Schița </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Navigation Buttons */}
-      <div className="flex gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={onBack} className="flex-1"> Înapoi </Button>
-        <Button type="submit" className="flex-1 bg-[#0066CC] hover:bg-[#0052a3] text-white" disabled={!sketchImage}> Revizuire Finală </Button>
+          {/* Navigation Buttons */}
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={onBack} className="flex-1"> Înapoi </Button>
+            <Button type="submit" className="flex-1 bg-[#0066CC] hover:bg-[#0052a3] text-white" disabled={!sketchImage}> Revizuire Finală </Button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   )
 }

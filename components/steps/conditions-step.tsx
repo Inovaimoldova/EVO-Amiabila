@@ -28,14 +28,18 @@ export default function ConditionsStep({ onConfirm }: ConditionsStepProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 rounded-lg" style={{ backgroundColor: '#E8F0FB' }}>
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Verificați dacă sunt îndeplinite următoarele condiții:</h3>
+        <h3 className="text-lg font-semibold">Condiții de Utilizare</h3>
+        <p className="text-sm text-gray-600">
+          Citiți cu atenție condițiile înainte de a continua. Completarea constatării amiabile digital necesită acordul
+          ambelor părți implicate în accident.
+        </p>
         <ul className="space-y-3">
           {CONDITIONS.map((condition, index) => (
             <li key={index} className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <span>{condition}</span>
+              <span className="font-semibold">{condition}</span>
             </li>
           ))}
         </ul>
